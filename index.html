@@ -3,45 +3,348 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPACEDUST - Cosmic Shooter</title>
+    <title>SPACEDUST - Cosmic Strategy</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #000000 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Orbitron', monospace; overflow: hidden; touch-action: none; color: #fff; }
-        #gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        canvas { border: 0.314px solid rgba(0, 255, 255, 0.7); box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2); background: #000; display: block; max-width: 100%; max-height: 100%; border-radius: 4px; }
-        #ui { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: #00ffff; font-size: 16px; text-shadow: 0 0 10px #00ffff; z-index: 10; pointer-events: none; background: rgba(0, 20, 30, 0.7); padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(0, 255, 255, 0.5); display: flex; flex-direction: row; gap: 20px; animation: ui-glow 2s infinite alternate; }
-        @keyframes ui-glow { from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); } to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); } }
+        
+        /* Общие стили */
+        #gameContainer, #galaxyContainer { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+        
+        #galaxyContainer { 
+            display: none; 
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(120, 0, 200, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 100, 255, 0.3) 0%, transparent 50%);
+        }
+        
+        canvas { 
+            border: 0.314px solid rgba(0, 255, 255, 0.7); 
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2); 
+            background: #000; 
+            display: block; 
+            max-width: 100%; 
+            max-height: 100%; 
+            border-radius: 4px; 
+        }
+        
+        /* Стили для шутера */
+        #ui { 
+            position: absolute; 
+            top: 80px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            color: #00ffff; 
+            font-size: 16px; 
+            text-shadow: 0 0 10px #00ffff; 
+            z-index: 10; 
+            pointer-events: none; 
+            background: rgba(0, 20, 30, 0.7); 
+            padding: 10px 20px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(0, 255, 255, 0.5); 
+            display: flex; 
+            flex-direction: row; 
+            gap: 20px; 
+            animation: ui-glow 2s infinite alternate; 
+        }
+        
+        @keyframes ui-glow { 
+            from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); } 
+            to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); } 
+        }
+        
         .ui-item { display: flex; align-items: center; gap: 8px; }
-        #controls { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 15; }
-        .control-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(0, 255, 255, 0.2); border: 2px solid #00ffff; color: #00ffff; font-size: 24px; display: flex; justify-content: center; align-items: center; touch-action: none; box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); transition: all 0.1s; backdrop-filter: blur(5px); }
-        .control-btn.active { background: rgba(0, 255, 255, 0.6); transform: scale(0.9); box-shadow: 0 0 11px rgba(0, 255, 255, 0.8); }
-        #fireBtn { width: 80px; height: 80px; background: rgba(255, 50, 50, 0.2); border-color: #ff3232; color: #ff3232; font-size: 16px; font-weight: bold; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 15px rgba(255, 50, 50, 0.5); touch-action: manipulation; text-align: center; line-height: 1.2; }
-        #fireBtn.active { background: rgba(255, 50, 50, 0.6); transform: translateX(-50%) scale(0.9); box-shadow: 0 0 11px rgba(255, 50, 50, 0.8); }
-        #gameOver, #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 20; width: 90%; max-width: 400px; background: rgba(10, 20, 40, 0.9); padding: 30px; border-radius: 15px; border: 2px solid rgba(0, 255, 255, 0.7); box-shadow: 0 0 30px rgba(0, 255, 255, 0.5); backdrop-filter: blur(10px); animation: screen-pulse 1.5s infinite alternate; }
-        @keyframes screen-pulse { from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } to { transform: translate(-50%, -50%) scale(1.02); opacity: 1; } }
+        
+        #controls { 
+            position: absolute; 
+            bottom: 20px; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 20px; 
+            z-index: 15; 
+        }
+        
+        .control-btn { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            background: rgba(0, 255, 255, 0.2); 
+            border: 2px solid #00ffff; 
+            color: #00ffff; 
+            font-size: 24px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            touch-action: none; 
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); 
+            transition: all 0.1s; 
+            backdrop-filter: blur(5px); 
+        }
+        
+        .control-btn.active { 
+            background: rgba(0, 255, 255, 0.6); 
+            transform: scale(0.9); 
+            box-shadow: 0 0 11px rgba(0, 255, 255, 0.8); 
+        }
+        
+        #fireBtn { 
+            width: 80px; 
+            height: 80px; 
+            background: rgba(255, 50, 50, 0.2); 
+            border-color: #ff3232; 
+            color: #ff3232; 
+            font-size: 16px; 
+            font-weight: bold; 
+            position: absolute; 
+            bottom: 40px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5); 
+            touch-action: manipulation; 
+            text-align: center; 
+            line-height: 1.2; 
+        }
+        
+        #fireBtn.active { 
+            background: rgba(255, 50, 50, 0.6); 
+            transform: translateX(-50%) scale(0.9); 
+            box-shadow: 0 0 11px rgba(255, 50, 50, 0.8); 
+        }
+        
+        #gameOver, #startScreen { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            text-align: center; 
+            z-index: 20; 
+            width: 90%; 
+            max-width: 400px; 
+            background: rgba(10, 20, 40, 0.9); 
+            padding: 30px; 
+            border-radius: 15px; 
+            border: 2px solid rgba(0, 255, 255, 0.7); 
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5); 
+            backdrop-filter: blur(10px); 
+            animation: screen-pulse 1.5s infinite alternate; 
+        }
+        
+        @keyframes screen-pulse { 
+            from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 
+            to { transform: translate(-50%, -50%) scale(1.02); opacity: 1; } 
+        }
+        
         #gameOver { display: none; }
-        #startScreen h1 { font-size: 36px; text-shadow: 0 0 20px #00ffff; margin-bottom: 20px; animation: pulse 2s infinite; background: linear-gradient(to right, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        #gameOver h1 { font-size: 32px; text-shadow: 0 0 20px #ff3232; margin-bottom: 10px; color: #ff3232; }
-        #startScreen p, #gameOver p { font-size: 16px; margin: 10px 0; color: #a0e0ff; line-height: 1.5; }
+        
+        #startScreen h1 { 
+            font-size: 36px; 
+            text-shadow: 0 0 20px #00ffff; 
+            margin-bottom: 20px; 
+            animation: pulse 2s infinite; 
+            background: linear-gradient(to right, #00ffff, #ff00ff); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        
+        #gameOver h1 { 
+            font-size: 32px; 
+            text-shadow: 0 0 20px #ff3232; 
+            margin-bottom: 10px; 
+            color: #ff3232; 
+        }
+        
+        #startScreen p, #gameOver p { 
+            font-size: 16px; 
+            margin: 10px 0; 
+            color: #a0e0ff; 
+            line-height: 1.5; 
+        }
+        
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .btn { background: transparent; border: 2px solid #00ffff; color: #00ffff; padding: 15px 40px; font-size: 18px; margin-top: 20px; transition: all 0.3s; font-family: 'Orbitron', monospace; touch-action: manipulation; border-radius: 30px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; position: relative; overflow: hidden; }
-        .btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent); transition: left 0.5s; }
+        
+        .btn { 
+            background: transparent; 
+            border: 2px solid #00ffff; 
+            color: #00ffff; 
+            padding: 15px 40px; 
+            font-size: 18px; 
+            margin-top: 20px; 
+            transition: all 0.3s; 
+            font-family: 'Orbitron', monospace; 
+            touch-action: manipulation; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            font-weight: bold; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .btn::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: -100%; 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent); 
+            transition: left 0.5s; 
+        }
+        
         .btn:hover::before, .btn:active::before { left: 100%; }
         .btn:active { background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 20px #00ffff; }
-        #leftZone, #rightZone { position: absolute; bottom: 0; width: 35%; height: 150px; z-index: 14; opacity: 0; }
-        #leftZone { left: 0; } #rightZone { right: 0; }
+        
+        #leftZone, #rightZone { 
+            position: absolute; 
+            bottom: 0; 
+            width: 35%; 
+            height: 150px; 
+            z-index: 14; 
+            opacity: 0; 
+        }
+        
+        #leftZone { left: 0; } 
+        #rightZone { right: 0; }
+        
         .instructions { margin-top: 15px; font-size: 14px; color: #80c0ff; }
+        
         .power-ups { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
-        .power-up { width: 33px; height: 33px; border-radius: 50%; background: rgba(255, 215, 0, 0.3); border: 1px solid gold; display: flex; justify-content: center; align-items: center; font-size: 12px; animation: power-glow 1s infinite alternate; }
+        
+        .power-up { 
+            width: 33px; 
+            height: 33px; 
+            border-radius: 50%; 
+            background: rgba(255, 215, 0, 0.3); 
+            border: 1px solid gold; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 12px; 
+            animation: power-glow 1s infinite alternate; 
+        }
+        
         @keyframes power-glow { from { box-shadow: 0 0 5px gold; } to { box-shadow: 0 0 3.14px gold; } }
+        
         .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        
         .star { position: absolute; background-color: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
+        
         @keyframes twinkle { from { opacity: 0.5; } to { opacity: 1; } }
+        
+        /* Стили для галактической карты */
+        .sector {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 3s infinite alternate;
+        }
+        
+        .sector.controlled {
+            background: radial-gradient(circle, #00ff88, #0088ff);
+            box-shadow: 0 0 30px #00ff88;
+        }
+        
+        .sector.enemy {
+            background: radial-gradient(circle, #ff4444, #ff0088);
+            box-shadow: 0 0 30px #ff4444;
+        }
+        
+        .sector.neutral {
+            background: radial-gradient(circle, #8888ff, #4444aa);
+            box-shadow: 0 0 20px #8888ff;
+        }
+        
+        .sector:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+        
+        .sirius-dust {
+            position: absolute;
+            top: 20%;
+            left: 15%;
+            font-size: 24px;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { opacity: 0.7; transform: scale(1); }
+            to { opacity: 1; transform: scale(1.05); }
+        }
+        
+        .resources-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #00ffff;
+        }
+        
+        .mission-alert {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 100, 0, 0.9);
+            padding: 15px 30px;
+            border-radius: 25px;
+            animation: alert-pulse 1.5s infinite;
+        }
+        
+        @keyframes alert-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 0, 0.7); }
+            50% { box-shadow: 0 0 40px rgba(255, 100, 0, 1); }
+        }
+        
+        .mode-switcher {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        
+        .mode-btn {
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 10px #00ffff;
+        }
     </style>
 </head>
 <body>
+    <!-- Космический шутер -->
     <div id="gameContainer">
         <div class="stars" id="stars"></div>
         
@@ -57,6 +360,9 @@
             <div class="instructions">Use Buttons to Move and Fire</div>
             <div class="power-ups"><div class="power-up">S</div><div class="power-up">P</div><div class="power-up">L</div></div>
             <button class="btn" ontouchstart="startGame()" onclick="startGame()">СТАРТ</button>
+            <div style="margin-top: 15px;">
+                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Галактическая карта</button>
+            </div>
         </div>
         
         <div id="gameOver">
@@ -64,6 +370,9 @@
             <p>Score: <span id="finalScore">0</span></p>
             <p>Sector under enemy control!</p>
             <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">ПОВТОРИТЬ</button>
+            <div style="margin-top: 15px;">
+                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Галактическая карта</button>
+            </div>
         </div>
         
         <canvas id="gameCanvas"></canvas>
@@ -77,11 +386,204 @@
         
         <div id="leftZone"></div>
         <div id="rightZone"></div>
+        
+        <div class="mode-switcher">
+            <button class="mode-btn" onclick="switchToGalaxy()">🌌 Карта</button>
+        </div>
+    </div>
+
+    <!-- Галактическая карта -->
+    <div id="galaxyContainer">
+        <div class="sirius-dust">✨ XDUST С СИРИУСА! ✨</div>
+        
+        <div class="resources-panel">
+            <h3>Ресурсы XDUST</h3>
+            <div>⚡ Энергия: <span id="energy">1500</span></div>
+            <div>🪐 Металлы: <span id="metals">800</span></div>
+            <div>💎 Кристаллы: <span id="crystals">300</span></div>
+            <div>🚀 Очки: <span id="galaxyScore">0</span></div>
+        </div>
+        
+        <div class="mission-alert">
+            🚨 Сириус передает XDUST для усиления флота!
+        </div>
+        
+        <div class="mode-switcher">
+            <button class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+        </div>
     </div>
 
     <script>
+        // === ПЕРЕКЛЮЧЕНИЕ МЕЖДУ РЕЖИМАМИ ===
+        function switchToGalaxy() {
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('galaxyContainer').style.display = 'flex';
+            initGalaxyMap();
+        }
+        
+        function switchToShooter() {
+            document.getElementById('galaxyContainer').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'flex';
+        }
+        
+        // === ГАЛАКТИЧЕСКАЯ КАРТА ===
+        function initGalaxyMap() {
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            galaxyContainer.innerHTML = `
+                <div class="sirius-dust">✨ XDUST С СИРИУСА! ✨</div>
+                <div class="resources-panel">
+                    <h3>Ресурсы XDUST</h3>
+                    <div>⚡ Энергия: <span id="energy">1500</span></div>
+                    <div>🪐 Металлы: <span id="metals">800</span></div>
+                    <div>💎 Кристаллы: <span id="crystals">300</span></div>
+                    <div>🚀 Очки: <span id="galaxyScore">${score}</span></div>
+                </div>
+                <div class="mission-alert">
+                    🚨 Сириус передает XDUST для усиления флота!
+                </div>
+                <div class="mode-switcher">
+                    <button class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+                </div>
+            `;
+            
+            // Создаем галактическую карту
+            const sectors = [
+                { id: 1, x: 15, y: 20, name: "СИРИУС", type: "controlled", resources: 2000 },
+                { id: 2, x: 25, y: 60, name: "АЛЬФА ЦЕНТАВРА", type: "enemy", resources: 1500 },
+                { id: 3, x: 50, y: 30, name: "БЕТЕЛЬГЕЙЗЕ", type: "neutral", resources: 800 },
+                { id: 4, x: 70, y: 50, name: "ПРОЦИОН", type: "controlled", resources: 1200 },
+                { id: 5, x: 40, y: 70, name: "ВЕГА", type: "enemy", resources: 1800 },
+                { id: 6, x: 60, y: 20, name: "АРКТУР", type: "neutral", resources: 600 },
+                { id: 7, x: 80, y: 40, name: "РИГЕЛЬ", type: "controlled", resources: 2500 }
+            ];
+
+            // Создаем секторы на карте
+            sectors.forEach(sector => {
+                const sectorElement = document.createElement('div');
+                sectorElement.className = `sector ${sector.type}`;
+                sectorElement.style.left = `${sector.x}%`;
+                sectorElement.style.top = `${sector.y}%`;
+                sectorElement.innerHTML = `
+                    <div style="text-align: center; font-size: 10px;">
+                        <strong>${sector.name}</strong><br>
+                        ⚡${sector.resources}
+                    </div>
+                `;
+                
+                sectorElement.addEventListener('click', () => {
+                    alert(`🚀 Выбран сектор: ${sector.name}\n💎 Ресурсы: ${sector.resources} XDUST`);
+                    
+                    // Анимация передачи ресурсов с Сириуса
+                    if (sector.type === 'enemy') {
+                        createResourceStream(sector);
+                    }
+                });
+                
+                galaxyContainer.appendChild(sectorElement);
+            });
+
+            // Создаем звездный фон
+            createGalaxyStars();
+            
+            // Автоматическая передача ресурсов с Сириуса
+            setInterval(() => {
+                const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
+                if (randomSector.name !== "СИРИУС") {
+                    createResourceStream(randomSector);
+                }
+            }, 5000);
+        }
+
+        // Анимация потока ресурсов с Сириуса
+        function createResourceStream(targetSector) {
+            const sectors = [
+                { id: 1, x: 15, y: 20, name: "СИРИУС", type: "controlled", resources: 2000 },
+                { id: 2, x: 25, y: 60, name: "АЛЬФА ЦЕНТАВРА", type: "enemy", resources: 1500 },
+                { id: 3, x: 50, y: 30, name: "БЕТЕЛЬГЕЙЗЕ", type: "neutral", resources: 800 },
+                { id: 4, x: 70, y: 50, name: "ПРОЦИОН", type: "controlled", resources: 1200 },
+                { id: 5, x: 40, y: 70, name: "ВЕГА", type: "enemy", resources: 1800 },
+                { id: 6, x: 60, y: 20, name: "АРКТУР", type: "neutral", resources: 600 },
+                { id: 7, x: 80, y: 40, name: "РИГЕЛЬ", type: "controlled", resources: 2500 }
+            ];
+            
+            const sirius = sectors.find(s => s.name === "СИРИУС");
+            const stream = document.createElement('div');
+            stream.style.position = 'absolute';
+            stream.style.left = `${sirius.x}%`;
+            stream.style.top = `${sirius.y}%`;
+            stream.style.width = '4px';
+            stream.style.height = '4px';
+            stream.style.background = '#00ffff';
+            stream.style.borderRadius = '50%';
+            stream.style.boxShadow = '0 0 10px #00ffff';
+            document.getElementById('galaxyContainer').appendChild(stream);
+            
+            // Анимация движения
+            const animation = stream.animate([
+                { 
+                    left: `${sirius.x}%`,
+                    top: `${sirius.y}%`,
+                    opacity: 1
+                },
+                { 
+                    left: `${targetSector.x}%`,
+                    top: `${targetSector.y}%`,
+                    opacity: 0
+                }
+            ], {
+                duration: 2000,
+                easing: 'ease-out'
+            });
+            
+            animation.onfinish = () => {
+                stream.remove();
+                // Обновляем ресурсы
+                updateGalaxyResources(targetSector.resources * 0.3);
+            };
+        }
+
+        function updateGalaxyResources(amount) {
+            const energyElem = document.getElementById('energy');
+            const metalsElem = document.getElementById('metals');
+            const crystalsElem = document.getElementById('crystals');
+            const scoreElem = document.getElementById('galaxyScore');
+            
+            let energy = parseInt(energyElem.textContent) + amount;
+            let metals = parseInt(metalsElem.textContent) + amount * 0.7;
+            let crystals = parseInt(crystalsElem.textContent) + amount * 0.3;
+            
+            energyElem.textContent = Math.floor(energy);
+            metalsElem.textContent = Math.floor(metals);
+            crystalsElem.textContent = Math.floor(crystals);
+            scoreElem.textContent = score;
+            
+            // Эффект получения ресурсов
+            document.body.style.animation = 'glow 0.5s';
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 500);
+        }
+
+        function createGalaxyStars() {
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.style.position = 'absolute';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.width = `${Math.random() * 2 + 1}px`;
+                star.style.height = star.style.width;
+                star.style.background = 'white';
+                star.style.borderRadius = '50%';
+                star.style.opacity = Math.random() * 0.7 + 0.3;
+                star.style.animation = `twinkle ${Math.random() * 3 + 2}s infinite alternate`;
+                galaxyContainer.appendChild(star);
+            }
+        }
+
+        // === КОСМИЧЕСКИЙ ШУТЕР ===
         // === ЗВУКИ: ПУЛ ДЛЯ БЕЗЛАГОВОЙ ИГРЫ ===
-        const shootSounds = [new Audio('shoot.ogg'), new Audio('shoot.ogg'), new Audio('shoot.ogg')];
+        const shootSounds = [new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=='), new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=='), new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==')];
         let shootIndex = 0;
         function playShoot() {
             const s = shootSounds[shootIndex];
@@ -89,8 +591,8 @@
             s.play().catch(() => {});
             shootIndex = (shootIndex + 1) % 3;
         }
-        const explosionSound = new Audio('explosion.ogg');
-        const powerupSound = new Audio('powerup.ogg');
+        const explosionSound = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+        const powerupSound = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
 
         // Предзагрузка
         shootSounds.forEach(s => s.load());
