@@ -11,7 +11,7 @@
         body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #000000 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Orbitron', monospace; overflow: hidden; touch-action: none; color: #fff; }
         #gameContainer { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         canvas { border: 0.314px solid rgba(0, 255, 255, 0.7); box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2); background: #000; display: block; max-width: 100%; max-height: 100%; border-radius: 4px; }
-        #ui { position: absolute; top: 15px; left: 15px; color: #00ffff; font-size: 18px; text-shadow: 0 0 10px #00ffff; z-index: 10; pointer-events: none; background: rgba(0, 20, 30, 0.7); padding: 15px; border-radius: 3px; border: 1px solid rgba(0, 255, 255, 0.5); display: flex; flex-direction: column; gap: 7px; animation: ui-glow 2s infinite alternate; }
+        #ui { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: #00ffff; font-size: 16px; text-shadow: 0 0 10px #00ffff; z-index: 10; pointer-events: none; background: rgba(0, 20, 30, 0.7); padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(0, 255, 255, 0.5); display: flex; flex-direction: row; gap: 20px; animation: ui-glow 2s infinite alternate; }
         @keyframes ui-glow { from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); } to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); } }
         .ui-item { display: flex; align-items: center; gap: 8px; }
         #controls { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 15; }
