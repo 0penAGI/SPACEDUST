@@ -1,3 +1,4 @@
+
 # SPACEDUST GAME IN $XDUST AI
 **TRY [GAME](http://0penagi.github.io/SPACEDUST)**
 **USE $XDUST IN [TELEGRAM](http://t.me/@ARCHITECTUREAIbot)**
@@ -175,5 +176,8 @@ For issues or suggestions:
 This game is free to use and modify. Attribution is appreciated but not required.
 
 ---
+
+**Ready to defend the galaxy? Launch SPACEDUST and begin your cosmic adventure!** 🚀✨
+
 
 **Ready to defend the galaxy? Launch SPACEDUST and begin your cosmic adventure!** 🚀✨
