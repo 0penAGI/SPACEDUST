@@ -455,6 +455,28 @@
         <div class="mission-alert">
             🚨 Сириус передает XDUST для усиления флота!
         </div>
+
+        <div id="upgradeShop" style="
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            width: 320px;
+            background: rgba(5, 5, 50, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ff00ff;
+            box-shadow: 0 0 25px #ff00ff;
+            z-index: 20;
+            transition: all 0.3s ease;
+        ">
+            <h3 style="color: #ff00ff; text-align: center; margin-bottom: 10px; text-shadow: 0 0 10px #ff00ff;">
+                🛠️ Модернизации XDUST
+            </h3>
+            <div id="upgradesList"></div>
+            <p style="font-size: 12px; margin-top: 10px; color: #aaa;">
+                ⚡ Энергия: <span id="shopEnergy" class="resource-value">0</span>
+            </p>
+        </div>
         
         <!-- УНИФИЦИРОВАННАЯ КНОПКА ВНИЗУ -->
         <div id="bottomPanel-galaxy" style="position: fixed; bottom: 0; right: 20px; z-index: 100; padding-bottom: 20px;">
@@ -469,6 +491,151 @@
         let currentMetals = 800;
         let currentCrystals = 300;
         let miningInterval; // Переменная для хранения ID интервала майнинга
+
+        // === АПГРЕЙДЫ XDUST ===
+        let upgradeLevels = { fireRate: 0, bulletDamage: 0, hull: 0 };
+
+        // Данные апгрейдов: стоимость, эффект и максимум
+        const UPGRADE_DATA = {
+            fireRate: {
+                name: "Скорострельность",
+                maxLevel: 5,
+                baseCost: 500,
+                costMultiplier: 1.5,
+                effect: level => level > 0 ? (250 / (1 + level * 0.15)) : 250,
+                description: "Уменьшает кулдаун выстрелов."
+            },
+            bulletDamage: {
+                name: "Урон",
+                maxLevel: 5,
+                baseCost: 1000,
+                costMultiplier: 1.8,
+                effect: level => 1 + level * 0.5,
+                description: "Увеличивает урон от пуль."
+            },
+            hull: {
+                name: "Прочность корпуса",
+                maxLevel: 3,
+                baseCost: 800,
+                costMultiplier: 2.0,
+                effect: level => 3 + level,
+                description: "Добавляет дополнительную жизнь."
+            }
+        };
+
+        // ⭐ Сохранение данных (ресурсы + апгрейды)
+        function saveData() {
+            const gameState = {
+                energy: currentEnergy,
+                metals: currentMetals,
+                crystals: currentCrystals,
+                shooterScore: score,
+                shooterLives: lives,
+                upgradeLevels: upgradeLevels
+            };
+            try { localStorage.setItem('xdust_save_data', JSON.stringify(gameState)); } catch(e){}
+        }
+
+        // ⭐ Загрузка данных
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem('xdust_save_data');
+                if(!savedData) return false;
+                const data = JSON.parse(savedData);
+                if(typeof data.energy === 'number') currentEnergy = data.energy;
+                if(typeof data.metals === 'number') currentMetals = data.metals;
+                if(typeof data.crystals === 'number') currentCrystals = data.crystals;
+                if(typeof data.shooterScore === 'number') score = data.shooterScore;
+                if(typeof data.shooterLives === 'number') lives = data.shooterLives;
+                if(data.upgradeLevels) upgradeLevels = data.upgradeLevels;
+                applyUpgradeEffects();
+                updateUI();
+                return true;
+            } catch(e) { console.error("Ошибка загрузки данных:", e); return false; }
+        }
+
+        // Применение эффектов апгрейдов
+        function applyUpgradeEffects() {
+            shootCooldown = UPGRADE_DATA.fireRate.effect(upgradeLevels.fireRate);
+            const maxLives = UPGRADE_DATA.hull.effect(upgradeLevels.hull);
+            lives = Math.min(lives, maxLives);
+            updateUI();
+        }
+
+        // Отрисовка панели апгрейдов
+        function renderUpgradeShop() {
+            const list = document.getElementById('upgradesList');
+            const shopEnergy = document.getElementById('shopEnergy');
+            if(!list || !shopEnergy) return;
+            list.innerHTML = '';
+            shopEnergy.textContent = Math.floor(currentEnergy);
+            for(const key in UPGRADE_DATA){
+                const data = UPGRADE_DATA[key];
+                const currentLevel = upgradeLevels[key];
+                const nextCost = Math.floor(data.baseCost * Math.pow(data.costMultiplier, currentLevel));
+                const isMaxLevel = currentLevel >= data.maxLevel;
+                const upgradeDiv = document.createElement('div');
+                upgradeDiv.className = 'upgrade-item';
+                upgradeDiv.style.border='1px solid rgba(255,0,255,0.4)';
+                upgradeDiv.style.padding='8px';
+                upgradeDiv.style.marginBottom='8px';
+                upgradeDiv.style.borderRadius='5px';
+                upgradeDiv.style.backgroundColor = isMaxLevel?'rgba(0,255,136,0.1)':'rgba(0,0,0,0.4)';
+
+                const levelIndicators = Array(data.maxLevel).fill(0).map((_,i)=>
+                    `<span style="display:inline-block;width:8px;height:8px;margin:0 1px;border-radius:50%;background-color:${i<currentLevel?'#ff00ff':'#333'};box-shadow:${i<currentLevel?'0 0 5px #ff00ff':'none'}"></span>`
+                ).join('');
+
+                if(isMaxLevel){
+                    upgradeDiv.innerHTML = `
+                        <div style="color:#00ff88;font-weight:bold;">${data.name} (МАКС)</div>
+                        <div style="font-size:10px;color:#00ff88;margin-bottom:5px;">${levelIndicators}</div>
+                        <div style="font-size:12px;color:#00ff88;">МАКСИМУМ.</div>
+                    `;
+                } else {
+                    const canAfford = currentEnergy>=nextCost;
+                    const btnColor = canAfford?'#ff00ff':'#444';
+                    const btnShadow = canAfford?'0 0 10px #ff00ff':'none';
+                    upgradeDiv.innerHTML = `
+                        <div style="color:#fff;font-weight:bold;">${data.name} (Ур. ${currentLevel})</div>
+                        <div style="font-size:10px;color:#ccc;margin-bottom:5px;">${levelIndicators}</div>
+                        <div style="font-size:12px;color:#aaa;">${data.description}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                            <span style="color:${canAfford?'#00ffff':'#ff3333'};font-weight:bold;">⚡ ${nextCost}</span>
+                            <button onclick="buyUpgrade('${key}')" style="background:${btnColor};color:#000;border:none;padding:5px 10px;cursor:${canAfford?'pointer':'not-allowed'};border-radius:3px;font-family:'Orbitron',monospace;font-weight:bold;box-shadow:${btnShadow};transition:all 0.2s;" ${canAfford?'':'disabled'}>КУПИТЬ</button>
+                        </div>
+                    `;
+                }
+                list.appendChild(upgradeDiv);
+            }
+        }
+
+        // Покупка апгрейда
+        function buyUpgrade(key){
+            const data = UPGRADE_DATA[key];
+            const currentLevel = upgradeLevels[key];
+            const cost = Math.floor(data.baseCost * Math.pow(data.costMultiplier, currentLevel));
+            if(currentEnergy>=cost && currentLevel<data.maxLevel){
+                currentEnergy -= cost;
+                upgradeLevels[key]++;
+                saveData();
+                applyUpgradeEffects();
+
+                const itemElement = document.querySelector(`#upgradesList .upgrade-item:nth-child(${Object.keys(UPGRADE_DATA).indexOf(key)+1})`);
+                if(itemElement){
+                    itemElement.style.boxShadow='0 0 20px #00ff88';
+                    setTimeout(()=>{itemElement.style.boxShadow='none'; renderUpgradeShop();},300);
+                } else { renderUpgradeShop(); }
+
+                if(tg) tg.showAlert(`✅ ${data.name} повышен до Ур. ${upgradeLevels[key]}!`);
+            } else {
+                if(tg) tg.showAlert("🚫 Недостаточно энергии!");
+                const shopEl = document.getElementById('upgradeShop');
+                shopEl.style.transform='translateX(-5px)';
+                setTimeout(()=>{shopEl.style.transform='translateX(5px)';
+                    setTimeout(()=>{shopEl.style.transform='translateX(0)'},50);},50);
+            }
+        }
 
         // === ПРОГРЕСС АПГРЕЙДОВ: СОХРАНЕНИЕ/ЗАГРУЗКА ===
         function saveUpgradeData() {
@@ -559,6 +726,9 @@
         function initGalaxyMap() {
             // Загрузка прогресса апгрейдов/ресурсов
             loadUpgradeData();
+            // Загрузка апгрейдов и эффектов
+            loadData();
+            applyUpgradeEffects();
             // Обновляем только ресурсы в панели, не пересоздаём всю разметку и не удаляем bottomPanel-galaxy!
             // Обновить ресурсы
             const energyElem = document.getElementById('energy');
@@ -691,6 +861,9 @@
                     }
                 }, 5000);
             }
+
+            // Отрисовать магазин апгрейдов
+            renderUpgradeShop();
         }
 
         // Анимация потока ресурсов с Сириуса
@@ -948,7 +1121,7 @@
         let lives = 3;
         let animationId;
         let lastShot = 0;
-        const shootCooldown = 250;
+        let shootCooldown = 250;
 
         const player = { x: canvas.width / 2 - 20, y: canvas.height - 60, width: 40, height: 40, speed: 5, dx: 0, isDamaged: false, damageTime: 0, flashTime: 0 };
         let bullets = [], enemies = [], stars = [], particles = [], powerUps = [];
@@ -1378,7 +1551,9 @@
                         enemiesToRemove.push(e);
                         createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
                         powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
-                        score += 10;
+                        // Апгрейд урона и очков
+                        const dmg = UPGRADE_DATA.bulletDamage.effect(upgradeLevels.bulletDamage);
+                        score += Math.round(10 * dmg);
                         updateUI();
                         break;
                     }
@@ -1410,11 +1585,13 @@
                     const bullet = bullets[b];
                     if (bullet.x < boss.x + boss.width && bullet.x + bullet.width > boss.x && bullet.y < boss.y + boss.height && bullet.y + bullet.height > boss.y) {
                         bulletsToRemove.push(b);
-                        boss.hp--;
+                        // Модификация урона по боссу
+                        const dmg = UPGRADE_DATA.bulletDamage.effect(upgradeLevels.bulletDamage);
+                        boss.hp -= dmg;
                         createParticles(bullet.x + bullet.width/2, bullet.y + bullet.height/2, '#00ccff', 6);
                         if (boss.hp <= 0) {
                             createParticles(boss.x + boss.width/2, boss.y + boss.height/2, null, 60);
-                            score += 500;
+                            score += Math.round(500 * dmg);
                             updateUI();
                             if (Math.random() < 0.1) createPowerUp(boss.x + boss.width/2, boss.y + boss.height/2, 'megaShield');
                             bossActive = false;
