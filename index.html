@@ -483,21 +483,45 @@
         }
 
         function switchToGalaxy() {
+            // Hide shooter UI
             document.getElementById('gameContainer').style.display = 'none';
             document.getElementById('galaxyContainer').style.display = 'flex';
+            // Hide shooter bottom panel/buttons
             document.getElementById('bottomPanel').style.display = 'none';
+            // Show galaxy bottom panel/button
             const galaxyPanel = document.getElementById('bottomPanel-galaxy');
             if (galaxyPanel) galaxyPanel.style.display = 'block';
+            // Hide shooter-specific controls if present
+            // Also ensure shooterBtn (if present in shooter) is hidden
+            const shooterBtn = document.getElementById('shooterBtn');
+            if (shooterBtn) shooterBtn.style.display = 'block';
+            // Hide any shooter overlays if present
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
             initGalaxyMap();
             startMining();
         }
 
         function switchToShooter() {
+            // Hide galaxy UI
             document.getElementById('galaxyContainer').style.display = 'none';
             document.getElementById('gameContainer').style.display = 'flex';
+            // Show shooter bottom panel/buttons
             document.getElementById('bottomPanel').style.display = 'flex';
+            // Hide galaxy bottom panel/button
             const galaxyPanel = document.getElementById('bottomPanel-galaxy');
             if (galaxyPanel) galaxyPanel.style.display = 'none';
+            // Hide shooterBtn if present (to avoid double button)
+            const shooterBtn = document.getElementById('shooterBtn');
+            if (shooterBtn) shooterBtn.style.display = 'none';
+            // If game is not running, show start screen or game over as appropriate
+            if (!gameRunning) {
+                if (lives <= 0) {
+                    document.getElementById('gameOver').style.display = 'block';
+                } else {
+                    document.getElementById('startScreen').style.display = 'block';
+                }
+            }
             stopMining();
         }
 
@@ -1499,8 +1523,3 @@
 </body>
 </html>
 
-        // === ПРИМЕР: ПОКУПКА АПГРЕЙДА (добавьте этот вызов в вашу функцию покупки) ===
-        // function buyUpgrade(upgradeId) {
-        //     // ... логика покупки ...
-        //     saveUpgradeData(); // Сохраняем после успешной покупки
-        // }
