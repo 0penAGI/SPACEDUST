@@ -808,13 +808,11 @@
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.mp3'),
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.m4a')
         ];
-        
         const explosionSounds = [
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.ogg'),
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.mp3'),
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.m4a')
         ];
-        
         const powerupSounds = [
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.ogg'),
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.mp3'),
@@ -825,11 +823,62 @@
         let explosionIndex = 0;
         let powerupIndex = 0;
 
+        // === Web Audio API для гранулярного выстрела ===
+        let audioContext = null;
+        let shootBuffer = null;
+        let isAudioLoaded = false;
+        let fireIntensity = 0;
+        const MAX_INTENSITY = 1.0;
+        const shootSoundPath = "https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg";
+
+        // Загружаем звук выстрела для Web Audio API
+        function initAudio() {
+            if (isAudioLoaded) return;
+            try {
+                audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                // Не удалось создать аудиоконтекст
+                return;
+            }
+            fetch(shootSoundPath)
+                .then(r => r.arrayBuffer())
+                .then(b => audioContext.decodeAudioData(b))
+                .then(buffer => {
+                    shootBuffer = buffer;
+                    isAudioLoaded = true;
+                });
+        }
+
         function playShoot() {
-            const s = shootSounds[shootIndex];
-            s.currentTime = 0;
-            s.play().catch(() => {});
-            shootIndex = (shootIndex + 1) % shootSounds.length;
+            // Использовать Web Audio API, если загружено
+            if (audioContext && shootBuffer && isAudioLoaded) {
+                try {
+                    const src = audioContext.createBufferSource();
+                    src.buffer = shootBuffer;
+                    // Морфинг: меняем playbackRate и громкость в зависимости от fireIntensity
+                    let morph = Math.min(1, Math.max(0, fireIntensity / MAX_INTENSITY));
+                    src.playbackRate.value = 1.0 + morph * 0.25 + (Math.random() - 0.5) * 0.05;
+                    const gain = audioContext.createGain();
+                    gain.gain.value = 0.4 + morph * 0.4;
+                    src.connect(gain).connect(audioContext.destination);
+                    // Гранулярность: проигрываем короткий срез с небольшим смещением
+                    const duration = Math.max(0.08, 0.12 + morph * 0.04);
+                    const offset = Math.random() * (shootBuffer.duration - duration - 0.01);
+                    src.start(0, offset, duration);
+                } catch (e) {
+                    // fallback
+                    const s = shootSounds[shootIndex];
+                    s.currentTime = 0;
+                    s.play().catch(() => {});
+                    shootIndex = (shootIndex + 1) % shootSounds.length;
+                }
+            } else {
+                // fallback
+                const s = shootSounds[shootIndex];
+                s.currentTime = 0;
+                s.play().catch(() => {});
+                shootIndex = (shootIndex + 1) % shootSounds.length;
+            }
         }
 
         function playExplosion() {
@@ -1463,8 +1512,16 @@
             document.getElementById('fireBtn').classList.toggle('active', active);
             clearInterval(fireInterval);
             if (active) {
+                // Инициализируем аудио при первом взаимодействии
+                if (!isAudioLoaded) initAudio();
+                fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.25);
                 shoot();
-                fireInterval = setInterval(shoot, shootCooldown);
+                fireInterval = setInterval(() => {
+                    fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.08);
+                    shoot();
+                }, shootCooldown);
+            } else {
+                fireIntensity = 0;
             }
         }
 
@@ -1519,6 +1576,9 @@
 
         // Предзагрузка звуков при загрузке страницы
         window.addEventListener('load', preloadSounds);
+        // Инициализация аудио по первому взаимодействию пользователя (для Web Audio API)
+        document.body.addEventListener('touchstart', initAudio, { once: true });
+        document.body.addEventListener('mousedown', initAudio, { once: true });
     </script>
 </body>
 </html>
