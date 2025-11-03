@@ -368,6 +368,46 @@
             background: rgba(0, 255, 255, 0.2);
             box-shadow: 0 0 10px #00ffff;
         }
+
+        /* Эффект дыхания и сияния для сектора $XDUST-9001 */
+        .sector.mission-unlocked::after {
+            content: "";
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            border-radius: 50%;
+            background: radial-gradient(rgba(255,0,255,0.4), transparent 70%);
+            animation: xdustBreath 2.5s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes xdustBreath {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+
+        /* Звездный фон галактики */
+        #galaxyContainer::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 70%),
+                        url('https://www.transparenttextures.com/patterns/stardust.png');
+            background-size: cover;
+            animation: starsDrift 60s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes starsDrift {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 1000px; }
+        }
+
+        /* Анимация "взрыва фрактального света" */
+        @keyframes burstFade {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            to { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -535,7 +575,42 @@
                             ⚡${sector.resources}
                         </div>
                     `;
-                    sectorElement.addEventListener('click', () => handleXDUST9001Click(isUnlocked, sector.requiredEnergy));
+                    // Добавляем анимацию и вспышку для $XDUST-9001
+                    sectorElement.addEventListener('click', () => {
+                        // Логика для анимации при активации сектора $XDUST-9001
+                        if (sector.name === "$XDUST-9001") {
+                            if (currentEnergy >= 3000) {
+                                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                    tg.showAlert("🚀 МЕГА-МИССИЯ АКТИВНА!\n⚡ Энергия усилилась!");
+                                } else {
+                                    alert("🚀 МЕГА-МИССИЯ АКТИВНА!\n⚡ Энергия усилилась!");
+                                }
+                                currentEnergy *= 2;
+                                // Обновляем ресурсы
+                                updateGalaxyResources(0);
+
+                                // Добавляем эффект взрыва фрактального света
+                                const burst = document.createElement('div');
+                                burst.style.position = 'absolute';
+                                burst.style.left = '50%';
+                                burst.style.top = '50%';
+                                burst.style.width = '200px';
+                                burst.style.height = '200px';
+                                burst.style.borderRadius = '50%';
+                                burst.style.background = 'radial-gradient(circle, rgba(255,0,255,0.6), transparent 70%)';
+                                burst.style.transform = 'translate(-50%, -50%)';
+                                burst.style.animation = 'burstFade 2s ease-out forwards';
+                                galaxyContainer.appendChild(burst);
+                                setTimeout(() => burst.remove(), 2000);
+                            } else {
+                                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                    tg.showAlert(`🔒 Нужно 3000 ⚡\nУ вас: ${currentEnergy}`);
+                                } else {
+                                    alert(`🔒 Нужно 3000 ⚡\nУ вас: ${currentEnergy}`);
+                                }
+                            }
+                        }
+                    });
                 } else {
                     sectorElement.className = `sector ${sector.type}`;
                     sectorElement.style.left = `${sector.x}%`;
