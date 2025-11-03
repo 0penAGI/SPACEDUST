@@ -39,8 +39,6 @@
         .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .star { position: absolute; background-color: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
         @keyframes twinkle { from { opacity: 0.5; } to { opacity: 1; } }
-        #soundToggle { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(0, 255, 255, 0.2); border: 1px solid #00ffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; z-index: 25; cursor: pointer; touch-action: manipulation; }
-        #soundToggle.muted { background: rgba(255, 50, 50, 0.2); border-color: #ff3232; }
     </style>
 </head>
 <body>
@@ -51,8 +49,6 @@
             <div class="ui-item"><span>⚡</span><span id="score">0</span></div>
             <div class="ui-item"><span>❤️</span><span id="lives">3</span></div>
         </div>
-        
-        <div id="soundToggle">🔊</div>
         
         <div id="startScreen">
             <h1>🚀 SPACEDUST</h1>
@@ -84,143 +80,22 @@
     </div>
 
     <script>
-        // === ОПТИМИЗИРОВАННАЯ СИСТЕМА ЗВУКА ===
-        class AudioManager {
-            constructor() {
-                this.sounds = new Map();
-                this.enabled = true;
-                this.audioContext = null;
-                this.init();
-            }
-
-            async init() {
-                // Пытаемся использовать Web Audio API
-                try {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (error) {
-                    console.log('Web Audio API not supported, using HTML5 Audio fallback');
-                }
-
-                // Загружаем звуки в оптимальных форматах
-                const soundConfigs = [
-                    { id: 'shoot', src: ['shoot.ogg', 'shoot.m4a'], poolSize: 4 },
-                    { id: 'explosion', src: ['explosion.ogg', 'explosion.m4a'], poolSize: 3 },
-                    { id: 'powerup', src: ['powerup.ogg', 'powerup.m4a'], poolSize: 2 }
-                ];
-
-                for (const config of soundConfigs) {
-                    await this.loadSound(config);
-                }
-            }
-
-            async loadSound(config) {
-                const pool = [];
-                
-                // Если Web Audio API доступен, загружаем через него
-                if (this.audioContext) {
-                    try {
-                        const response = await fetch(config.src[0]);
-                        const arrayBuffer = await response.arrayBuffer();
-                        const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-                        
-                        // Создаем пул источников звука
-                        for (let i = 0; i < config.poolSize; i++) {
-                            pool.push({ buffer: audioBuffer, source: null });
-                        }
-                        
-                        this.sounds.set(config.id, { pool, index: 0, type: 'webAudio' });
-                        return;
-                    } catch (error) {
-                        console.log(`Web Audio loading failed for ${config.id}, falling back to HTML5 Audio`);
-                    }
-                }
-                
-                // Fallback на HTML5 Audio
-                for (let i = 0; i < config.poolSize; i++) {
-                    const audio = new Audio();
-                    audio.preload = 'auto';
-                    audio.volume = 0.7;
-                    
-                    // Поддержка разных форматов
-                    const source = document.createElement('source');
-                    source.src = config.src[0];
-                    source.type = this.getMimeType(config.src[0]);
-                    
-                    audio.appendChild(source);
-                    
-                    // Добавляем альтернативный формат для совместимости
-                    if (config.src[1]) {
-                        const fallbackSource = document.createElement('source');
-                        fallbackSource.src = config.src[1];
-                        fallbackSource.type = this.getMimeType(config.src[1]);
-                        audio.appendChild(fallbackSource);
-                    }
-                    
-                    // Добавляем в DOM для предзагрузки
-                    document.body.appendChild(audio);
-                    
-                    pool.push(audio);
-                }
-                this.sounds.set(config.id, { pool, index: 0, type: 'html5' });
-            }
-
-            getMimeType(filename) {
-                if (filename.endsWith('.ogg')) return 'audio/ogg; codecs="vorbis"';
-                if (filename.endsWith('.m4a')) return 'audio/mp4; codecs="mp4a.40.2"';
-                if (filename.endsWith('.mp3')) return 'audio/mpeg';
-                return 'audio/wav';
-            }
-
-            play(soundId) {
-                if (!this.enabled || !this.sounds.has(soundId)) return;
-
-                const sound = this.sounds.get(soundId);
-                
-                if (sound.type === 'webAudio') {
-                    // Воспроизведение через Web Audio API
-                    const item = sound.pool[sound.index];
-                    
-                    if (this.audioContext.state === 'suspended') {
-                        this.audioContext.resume();
-                    }
-                    
-                    item.source = this.audioContext.createBufferSource();
-                    item.source.buffer = item.buffer;
-                    item.source.connect(this.audioContext.destination);
-                    item.source.start(0);
-                    
-                } else {
-                    // Воспроизведение через HTML5 Audio
-                    const audio = sound.pool[sound.index];
-                    audio.currentTime = 0;
-                    audio.play().catch(e => {
-                        // Игнорируем ошибки автовоспроизведения
-                        if (e.name !== 'NotAllowedError') {
-                            console.log('Audio play failed:', e);
-                        }
-                    });
-                }
-                
-                // Переходим к следующему элементу пула
-                sound.index = (sound.index + 1) % sound.pool.length;
-            }
-
-            setEnabled(enabled) {
-                this.enabled = enabled;
-                document.getElementById('soundToggle').classList.toggle('muted', !enabled);
-                document.getElementById('soundToggle').textContent = enabled ? '🔊' : '🔇';
-                
-                // Сохраняем настройку в localStorage
-                localStorage.setItem('gameSoundEnabled', enabled);
-            }
-
-            toggle() {
-                this.setEnabled(!this.enabled);
-            }
+        // === ЗВУКИ: ПУЛ ДЛЯ БЕЗЛАГОВОЙ ИГРЫ ===
+        const shootSounds = [new Audio('shoot.ogg'), new Audio('shoot.ogg'), new Audio('shoot.ogg')];
+        let shootIndex = 0;
+        function playShoot() {
+            const s = shootSounds[shootIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            shootIndex = (shootIndex + 1) % 3;
         }
+        const explosionSound = new Audio('explosion.ogg');
+        const powerupSound = new Audio('powerup.ogg');
 
-        // Создаем глобальный менеджер звуков
-        const audioManager = new AudioManager();
+        // Предзагрузка
+        shootSounds.forEach(s => s.load());
+        explosionSound.load();
+        powerupSound.load();
 
         // Telegram WebApp
         let tg = window.Telegram?.WebApp;
@@ -296,7 +171,7 @@
                 const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
                 particles.push({ x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 30 + Math.random() * 20, size: 3 + Math.random() * 2, color: colors[Math.floor(Math.random() * colors.length)] });
             }
-            audioManager.play('explosion');
+            try { explosionSound.currentTime = 0; explosionSound.play(); } catch(e) {}
         }
 
         function createPowerUp(x, y, forcedType = null) {
@@ -311,7 +186,7 @@
         }
 
         function applyPowerUp(type) {
-            audioManager.play('powerup');
+            try { powerupSound.currentTime = 0; powerupSound.play(); } catch(e) {}
             player.flashTime = Date.now() + 300;
             switch(type) {
                 case 'shield': shieldActive = true; setTimeout(() => { shieldActive = false; }, 10000); break;
@@ -602,7 +477,7 @@
                     speed: isLaser ? 12 : 8
                 });
                 lastShot = now;
-                audioManager.play('shoot');
+                playShoot();
             }
         }
 
@@ -809,15 +684,6 @@
             if (e.code === 'Space') setFire(false);
         });
 
-        // Управление звуком
-        document.getElementById('soundToggle').addEventListener('click', () => {
-            audioManager.toggle();
-        });
-        document.getElementById('soundToggle').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            audioManager.toggle();
-        });
-
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
@@ -840,14 +706,6 @@
         }
 
         function restartGame() { startGame(); }
-
-        // Восстановление настроек звука из localStorage
-        window.addEventListener('load', () => {
-            const soundEnabled = localStorage.getItem('gameSoundEnabled');
-            if (soundEnabled !== null) {
-                audioManager.setEnabled(soundEnabled === 'true');
-            }
-        });
 
         document.body.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
     </script>
