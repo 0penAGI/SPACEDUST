@@ -771,9 +771,19 @@
             startMining();
         }
 
-        // Обновлённая функция switchToShooter с поддержкой динамических миссий и $XSDC
-        function switchToShooter(isMission = false, missionDifficulty = 1) {
-            // Скрываем карту и показываем шутер
+        // Новая версия switchToShooter: поддержка динамических миссий, $XSDC и колбэка завершения миссии
+        /**
+         * Переключение в режим шутера.
+         * @param {boolean} isMission - true если это миссия, иначе обычная игра
+         * @param {number} missionDifficulty - сложность миссии (по умолчанию 1)
+         * @param {function} onMissionComplete - опциональный колбэк при завершении миссии
+         * @param {object} missionOptions - опции миссии: { xsdcReward, missionScoreBase }
+         */
+        function switchToShooter(isMission = false, missionDifficulty = 1, onMissionComplete = null, missionOptions = {}) {
+            // Остановить майнинг при входе в шутер
+            stopMining();
+
+            // UI: показать шутер, скрыть галактику и лишние панели
             document.getElementById('galaxyContainer').style.display = 'none';
             document.getElementById('gameContainer').style.display = 'flex';
             document.getElementById('bottomPanel').style.display = 'flex';
@@ -782,7 +792,7 @@
             const shooterBtn = document.getElementById('shooterBtn');
             if (shooterBtn) shooterBtn.style.display = 'none';
 
-            // Если игра ещё не запущена, активируем стартовый экран или gameOver
+            // Сбросить состояния UI старт/гейм-овер (только если не в процессе игры)
             if (!gameRunning) {
                 if (lives <= 0) {
                     document.getElementById('gameOver').style.display = 'block';
@@ -791,24 +801,59 @@
                 }
             }
 
+            // --- Миссионный режим ---
             if (isMission) {
+                // Устанавливаем параметры миссии
                 gameRunning = true;
-                // Увеличиваем score в зависимости от сложности миссии
-                score = Math.floor(score * missionDifficulty);
-                // enemySpawnRate и bossInterval зависят от сложности
+                // Если задано missionScoreBase, используем его, иначе масштабируем score
+                if (typeof missionOptions.missionScoreBase === 'number') {
+                    score = missionOptions.missionScoreBase;
+                } else {
+                    score = Math.floor(score * missionDifficulty);
+                }
+                // Сложность влияет на частоту врагов и боссов
                 enemySpawnRate = 0.03 * missionDifficulty;
                 bossInterval = 45000 / missionDifficulty;
+
+                // Флаг для отслеживания завершения миссии
+                let missionActive = true;
+                // Встроенный обработчик завершения миссии (например, по истечению времени или достижению цели)
+                // Здесь можно реализовать свою механику, например, по таймеру или по очкам
+                // Пример: миссия длится N секунд, затем завершение
+                if (typeof missionOptions.durationMs === 'number' && missionOptions.durationMs > 0) {
+                    setTimeout(() => {
+                        if (!missionActive) return;
+                        missionActive = false;
+                        gameRunning = false;
+                        // Награда $XSDC
+                        const xsdcReward = typeof missionOptions.xsdcReward === 'number' ? missionOptions.xsdcReward : Math.floor(1000 * missionDifficulty);
+                        currentXSDC += xsdcReward;
+                        displayResources();
+                        saveDataAll && saveDataAll();
+                        if (typeof onMissionComplete === 'function') {
+                            onMissionComplete({ success: true, xsdcReward, score, difficulty: missionDifficulty });
+                        } else {
+                            // UI-фидбек
+                            if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                tg.showAlert(`✅ Миссия завершена! Награда: +${xsdcReward} $XSDC`);
+                            } else {
+                                alert(`✅ Миссия завершена! Награда: +${xsdcReward} $XSDC`);
+                            }
+                        }
+                        // Вернуть игрока на карту
+                        switchToGalaxy();
+                    }, missionOptions.durationMs);
+                }
                 // Лог запуска миссии
-                console.log("💥 Миссия запущена с сложностью:", missionDifficulty);
+                console.log("💥 Миссия запущена!", { missionDifficulty, missionOptions });
             } else {
+                // --- Обычный режим ---
                 gameRunning = true;
                 enemySpawnRate = 0.03;
                 bossInterval = 45000;
             }
 
-            // Всегда останавливаем майнинг перед запуском шутера
-            stopMining();
-            // Запускаем игровой цикл
+            // Запуск игрового цикла
             gameLoop();
         }
 
@@ -2000,3 +2045,4 @@
     </script>
 </body>
 </html>
+
