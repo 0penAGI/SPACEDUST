@@ -12,6 +12,9 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         
         body {
@@ -39,13 +42,13 @@
         canvas {
             border: 2px solid rgba(0, 255, 255, 0.7);
             box-shadow: 
-                0 0 20px rgba(0, 255, 255, 0.5),
-                inset 0 0 20px rgba(0, 255, 255, 0.2);
+                0 0 30px rgba(0, 255, 255, 0.6),
+                inset 0 0 25px rgba(0, 255, 255, 0.3);
             background: #000000;
             display: block;
             max-width: 100%;
             max-height: 100%;
-            border-radius: 4px;
+            border-radius: 8px;
         }
         
         #ui {
@@ -54,22 +57,23 @@
             left: 15px;
             color: #00ffff;
             font-size: 18px;
-            text-shadow: 0 0 10px #00ffff;
+            text-shadow: 0 0 12px #00ffff;
             z-index: 10;
             pointer-events: none;
-            background: rgba(0, 20, 30, 0.7);
-            padding: 10px 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(0, 255, 255, 0.5);
+            background: rgba(0, 20, 30, 0.8);
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 255, 0.6);
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
         }
         
         .ui-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         #controls {
@@ -83,47 +87,47 @@
         }
         
         .control-btn {
-            width: 70px;
-            height: 70px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
-            background: rgba(0, 255, 255, 0.2);
+            background: rgba(0, 255, 255, 0.25);
             border: 2px solid #00ffff;
             color: #00ffff;
-            font-size: 24px;
+            font-size: 26px;
             display: flex;
             justify-content: center;
             align-items: center;
             user-select: none;
             touch-action: none;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-            transition: all 0.1s;
-            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            transition: all 0.15s ease-in-out;
+            backdrop-filter: blur(6px);
         }
         
         .control-btn.active {
-            background: rgba(0, 255, 255, 0.6);
-            transform: scale(0.9);
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
+            background: rgba(0, 255, 255, 0.7);
+            transform: scale(0.92);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.9);
         }
         
         #fireBtn {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 50, 50, 0.2);
+            width: 85px;
+            height: 85px;
+            background: rgba(255, 50, 50, 0.25);
             border-color: #ff3232;
             color: #ff3232;
-            font-size: 28px;
+            font-size: 30px;
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.6);
         }
         
         #fireBtn.active {
-            background: rgba(255, 50, 50, 0.6);
-            transform: translateX(-50%) scale(0.9);
-            box-shadow: 0 0 25px rgba(255, 50, 50, 0.8);
+            background: rgba(255, 50, 50, 0.7);
+            transform: translateX(-50%) scale(0.92);
+            box-shadow: 0 0 30px rgba(255, 50, 50, 0.9);
         }
         
         #gameOver, #startScreen {
@@ -134,13 +138,13 @@
             text-align: center;
             z-index: 20;
             width: 90%;
-            max-width: 400px;
-            background: rgba(10, 20, 40, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid rgba(0, 255, 255, 0.7);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
+            max-width: 420px;
+            background: rgba(10, 20, 40, 0.95);
+            padding: 35px;
+            border-radius: 20px;
+            border: 2px solid rgba(0, 255, 255, 0.8);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
         }
         
         #gameOver {
@@ -148,51 +152,52 @@
         }
         
         #startScreen h1 {
-            font-size: 36px;
-            text-shadow: 0 0 20px #00ffff;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            background: linear-gradient(to right, #00ffff, #ff00ff);
+            font-size: 40px;
+            text-shadow: 0 0 25px #00ffff;
+            margin-bottom: 25px;
+            animation: pulse 1.8s infinite;
+            background: linear-gradient(to right, #00ffff, #ff00ff, #ffff00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
         #gameOver h1 {
-            font-size: 32px;
-            text-shadow: 0 0 20px #ff3232;
-            margin-bottom: 10px;
+            font-size: 36px;
+            text-shadow: 0 0 25px #ff3232;
+            margin-bottom: 15px;
             color: #ff3232;
         }
         
         #startScreen p, #gameOver p {
-            font-size: 16px;
-            margin: 10px 0;
+            font-size: 18px;
+            margin: 12px 0;
             color: #a0e0ff;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
         }
         
         .btn {
             background: transparent;
             border: 2px solid #00ffff;
             color: #00ffff;
-            padding: 15px 40px;
-            font-size: 18px;
-            margin-top: 20px;
-            transition: all 0.3s;
+            padding: 16px 45px;
+            font-size: 20px;
+            margin-top: 25px;
+            transition: all 0.3s ease;
             font-family: 'Orbitron', 'Courier New', monospace;
             touch-action: manipulation;
-            border-radius: 30px;
+            border-radius: 35px;
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             font-weight: bold;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
         }
         
         .btn::before {
@@ -202,8 +207,8 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
-            transition: left 0.5s;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.5), transparent);
+            transition: left 0.6s ease;
         }
         
         .btn:hover::before, .btn:active::before {
@@ -211,8 +216,9 @@
         }
         
         .btn:active {
-            background: rgba(0, 255, 255, 0.2);
-            box-shadow: 0 0 20px #00ffff;
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 25px #00ffff;
+            transform: scale(0.98);
         }
         
         #leftZone, #rightZone {
@@ -233,31 +239,32 @@
         }
         
         .instructions {
-            margin-top: 15px;
-            font-size: 14px;
+            margin-top: 20px;
+            font-size: 16px;
             color: #80c0ff;
         }
         
         .power-ups {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 20px;
         }
         
         .power-up {
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
-            background: rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.4);
             border: 1px solid gold;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 12px;
+            font-size: 14px;
+            box-shadow: 0 0 10px gold;
         }
         
-        /* Добавляем звёздное небо на фон */
+        /* Звёздное небо на фон */
         .stars {
             position: absolute;
             top: 0;
@@ -265,12 +272,19 @@
             width: 100%;
             height: 100%;
             z-index: -1;
+            animation: twinkle 5s infinite;
         }
         
         .star {
             position: absolute;
             background-color: white;
             border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
@@ -335,24 +349,27 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Создание звёздного фона
+        // Создание звёздного фона с анимацией
         function createStars() {
             const starsContainer = document.getElementById('stars');
             starsContainer.innerHTML = '';
             
-            for (let i = 0; i < 150; i++) {
+            for (let i = 0; i = 200; i++) {  // Увеличил количество звёзд
                 const star = document.createElement('div');
                 star.className = 'star';
                 
-                const size = Math.random() * 2;
+                const size = Math.random() * 2.5;
                 star.style.width = `${size}px`;
                 star.style.height = `${size}px`;
                 
                 star.style.left = `${Math.random() * 100}%`;
                 star.style.top = `${Math.random() * 100}%`;
                 
-                const opacity = 0.5 + Math.random() * 0.5;
+                const opacity = 0.4 + Math.random() * 0.6;
                 star.style.opacity = opacity;
+                
+                const delay = Math.random() * 5;
+                star.style.animationDelay = `${delay}s`;
                 
                 starsContainer.appendChild(star);
             }
@@ -399,31 +416,32 @@
         let particles = [];
         let powerUps = [];
 
-        // Звёзды для параллакс-эффекта
+        // Звёзды для параллакс-эффекта в canvas
         function createGameStars() {
             stars = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 150; i++) {  // Увеличил количество
                 stars.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    size: Math.random() * 2 + 0.5,
-                    speed: Math.random() * 1.5 + 0.5,
-                    opacity: 0.5 + Math.random() * 0.5
+                    size: Math.random() * 2.5 + 0.5,
+                    speed: Math.random() * 2 + 0.5,
+                    opacity: 0.4 + Math.random() * 0.6
                 });
             }
         }
         createGameStars();
 
-        // Частицы взрыва
+        // Частицы взрыва с улучшениями
         function createParticles(x, y, color = null) {
-            for (let i = 0; i < 12; i++) {
-                const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
+            for (let i = 0; i < 20; i++) {  // Увеличил количество частиц
+                const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00', '#ff00ff'];
                 particles.push({
                     x: x,
                     y: y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8,
-                    life: 30,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 40,
+                    size: Math.random() * 3 + 1,
                     color: colors[Math.floor(Math.random() * colors.length)]
                 });
             }
@@ -431,7 +449,7 @@
 
         // Бонусы
         function createPowerUp(x, y) {
-            if (Math.random() < 0.3) { // 30% шанс появления бонуса
+            if (Math.random() < 0.4) {  // Увеличил шанс
                 const types = ['shield', 'speed', 'laser'];
                 const type = types[Math.floor(Math.random() * types.length)];
                 
@@ -449,9 +467,12 @@
         function drawPlayer() {
             ctx.save();
             
-            // Корпус корабля
-            ctx.fillStyle = '#00ffff';
-            ctx.shadowBlur = 10;
+            // Улучшенный корпус корабля с градиентом
+            const gradient = ctx.createLinearGradient(player.x, player.y, player.x, player.y + player.height);
+            gradient.addColorStop(0, '#00ffff');
+            gradient.addColorStop(1, '#0088ff');
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = '#00ffff';
             
             ctx.beginPath();
@@ -462,33 +483,52 @@
             ctx.closePath();
             ctx.fill();
             
-            // Двигатели
-            ctx.fillStyle = '#ff00ff';
+            // Двигатели с градиентом
+            const engineGradient = ctx.createLinearGradient(0, 0, 0, player.height);
+            engineGradient.addColorStop(0, '#ff00ff');
+            engineGradient.addColorStop(1, '#8800ff');
+            ctx.fillStyle = engineGradient;
             ctx.shadowColor = '#ff00ff';
             ctx.fillRect(player.x + 8, player.y + player.height - 8, 8, 8);
             ctx.fillRect(player.x + 24, player.y + player.height - 8, 8, 8);
             
-            // Огни двигателей (анимация)
-            const flameHeight = 5 + Math.random() * 5;
-            ctx.fillStyle = '#ffff00';
+            // Огни двигателей с анимацией
+            const flameHeight = 8 + Math.random() * 6;
+            const flameGradient = ctx.createLinearGradient(0, 0, 0, flameHeight);
+            flameGradient.addColorStop(0, '#ffff00');
+            flameGradient.addColorStop(1, '#ff8800');
+            ctx.fillStyle = flameGradient;
             ctx.shadowColor = '#ffff00';
-            ctx.fillRect(player.x + 10, player.y + player.height, 6, flameHeight);
-            ctx.fillRect(player.x + 26, player.y + player.height, 6, flameHeight);
+            ctx.beginPath();
+            ctx.moveTo(player.x + 10, player.y + player.height);
+            ctx.lineTo(player.x + 16, player.y + player.height);
+            ctx.lineTo(player.x + 13, player.y + player.height + flameHeight);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(player.x + 26, player.y + player.height);
+            ctx.lineTo(player.x + 32, player.y + player.height);
+            ctx.lineTo(player.x + 29, player.y + player.height + flameHeight);
+            ctx.closePath();
+            ctx.fill();
             
             ctx.restore();
         }
 
         function drawBullet(bullet) {
             ctx.save();
-            ctx.fillStyle = '#ffff00';
-            ctx.shadowBlur = 10;
+            const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + bullet.height);
+            gradient.addColorStop(0, '#ffff00');
+            gradient.addColorStop(1, '#ff8800');
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 12;
             ctx.shadowColor = '#ffff00';
             
-            // Создаём эффект плазмы
+            // Улучшенный эффект плазмы
             ctx.beginPath();
             ctx.moveTo(bullet.x, bullet.y + bullet.height);
             ctx.lineTo(bullet.x + bullet.width, bullet.y + bullet.height);
-            ctx.lineTo(bullet.x + bullet.width / 2, bullet.y);
+            ctx.quadraticCurveTo(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2, bullet.x + bullet.width / 2, bullet.y);
             ctx.closePath();
             ctx.fill();
             
@@ -497,8 +537,11 @@
 
         function drawEnemy(enemy) {
             ctx.save();
-            ctx.fillStyle = '#ff3232';
-            ctx.shadowBlur = 8;
+            const gradient = ctx.createLinearGradient(enemy.x, enemy.y, enemy.x, enemy.y + enemy.height);
+            gradient.addColorStop(0, '#ff3232');
+            gradient.addColorStop(1, '#880000');
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 10;
             ctx.shadowColor = '#ff3232';
             
             ctx.beginPath();
@@ -509,10 +552,16 @@
             ctx.closePath();
             ctx.fill();
             
-            // Добавляем детали врага
+            // Улучшенные детали врага
             ctx.fillStyle = '#ff9999';
-            ctx.fillRect(enemy.x + 5, enemy.y + 5, 5, 5);
-            ctx.fillRect(enemy.x + enemy.width - 10, enemy.y + 5, 5, 5);
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#ff9999';
+            ctx.beginPath();
+            ctx.arc(enemy.x + 8, enemy.y + 8, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(enemy.x + enemy.width - 8, enemy.y + 8, 3, 0, Math.PI * 2);
+            ctx.fill();
             
             ctx.restore();
         }
@@ -536,15 +585,21 @@
                     break;
             }
             
-            ctx.fillStyle = color;
-            ctx.shadowBlur = 10;
+            const gradient = ctx.createRadialGradient(
+                powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, 0,
+                powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, color);
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = color;
             ctx.beginPath();
             ctx.arc(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2, 0, Math.PI * 2);
             ctx.fill();
             
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#ffffff';
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#000000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(symbol, powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
@@ -553,19 +608,25 @@
         }
 
         function drawStars() {
-            ctx.fillStyle = '#ffffff';
             stars.forEach(star => {
                 ctx.globalAlpha = star.opacity;
-                ctx.fillRect(star.x, star.y, star.size, star.size);
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size / 2, 0, Math.PI * 2);
+                ctx.fill();
             });
             ctx.globalAlpha = 1;
         }
 
         function drawParticles() {
             particles.forEach((p, i) => {
+                ctx.globalAlpha = p.life / 40;
                 ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life / 30;
-                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.globalAlpha = 1;
             });
         }
@@ -581,18 +642,18 @@
         }
 
         function updateParticles() {
-            particles.forEach((p, i) => {
+            particles = particles.filter(p => {
                 p.x += p.vx;
                 p.y += p.vy;
+                p.vx *= 0.95;  // Замедление для реализма
+                p.vy *= 0.95;
                 p.life--;
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                }
+                return p.life > 0;
             });
         }
 
         function updatePowerUps() {
-            powerUps.forEach((powerUp, index) => {
+            powerUps = powerUps.filter((powerUp, index) => {
                 powerUp.y += powerUp.speed;
                 
                 // Проверка столкновения с игроком
@@ -600,16 +661,17 @@
                     player.x + player.width > powerUp.x &&
                     player.y < powerUp.y + powerUp.height &&
                     player.y + player.height > powerUp.y) {
-                    powerUps.splice(index, 1);
                     createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff');
                     // Здесь можно добавить логику применения бонуса
                     score += 50;
                     updateUI();
+                    return false;
                 }
                 
                 if (powerUp.y > canvas.height) {
-                    powerUps.splice(index, 1);
+                    return false;
                 }
+                return true;
             });
         }
 
@@ -636,14 +698,14 @@
         }
 
         function updateBullets() {
-            bullets.forEach((bullet, index) => {
+            bullets = bullets.filter(bullet => {
                 bullet.y -= bullet.speed;
-                if (bullet.y < 0) bullets.splice(index, 1);
+                return bullet.y >= 0;
             });
         }
 
         function spawnEnemy() {
-            if (Math.random() < 0.02) { // Увеличил шанс появления врагов
+            if (Math.random() < 0.03) {  // Увеличил шанс появления врагов
                 const size = 30 + Math.random() * 10;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
@@ -656,46 +718,51 @@
         }
 
         function updateEnemies() {
-            enemies.forEach((enemy, index) => {
+            enemies = enemies.filter(enemy => {
                 enemy.y += enemy.speed;
                 if (enemy.y > canvas.height) {
-                    enemies.splice(index, 1);
                     lives--;
                     updateUI();
                     if (lives <= 0) endGame();
+                    return false;
                 }
+                return true;
             });
         }
 
         function checkCollisions() {
-            bullets.forEach((bullet, bIndex) => {
-                enemies.forEach((enemy, eIndex) => {
+            for (let b = bullets.length - 1; b >= 0; b--) {
+                const bullet = bullets[b];
+                for (let e = enemies.length - 1; e >= 0; e--) {
+                    const enemy = enemies[e];
                     if (bullet.x < enemy.x + enemy.width &&
                         bullet.x + bullet.width > enemy.x &&
                         bullet.y < enemy.y + enemy.height &&
                         bullet.y + bullet.height > enemy.y) {
-                        bullets.splice(bIndex, 1);
-                        enemies.splice(eIndex, 1);
+                        bullets.splice(b, 1);
+                        enemies.splice(e, 1);
                         createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
                         createPowerUp(enemy.x, enemy.y);
                         score += 10;
                         updateUI();
+                        break;
                     }
-                });
-            });
+                }
+            }
 
-            enemies.forEach((enemy, index) => {
+            for (let e = enemies.length - 1; e >= 0; e--) {
+                const enemy = enemies[e];
                 if (player.x < enemy.x + enemy.width &&
                     player.x + player.width > enemy.x &&
                     player.y < enemy.y + enemy.height &&
                     player.y + player.height > enemy.y) {
-                    enemies.splice(index, 1);
+                    enemies.splice(e, 1);
                     createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
                     lives--;
                     updateUI();
                     if (lives <= 0) endGame();
                 }
-            });
+            }
         }
 
         function updateUI() {
@@ -714,16 +781,16 @@
             drawParticles();
             updateParticles();
             
-            powerUps.forEach(powerUp => drawPowerUp(powerUp));
+            powerUps.forEach(drawPowerUp);
             updatePowerUps();
 
             drawPlayer();
             movePlayer();
 
-            bullets.forEach(bullet => drawBullet(bullet));
+            bullets.forEach(drawBullet);
             updateBullets();
 
-            enemies.forEach(enemy => drawEnemy(enemy));
+            enemies.forEach(drawEnemy);
             updateEnemies();
             spawnEnemy();
 
@@ -732,14 +799,16 @@
             animationId = requestAnimationFrame(gameLoop);
         }
 
-        // Улучшенное управление касанием
+        // Улучшенное управление касанием с предотвращением залипания
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
         const fireBtn = document.getElementById('fireBtn');
         const leftZone = document.getElementById('leftZone');
         const rightZone = document.getElementById('rightZone');
 
-        // Функции для обработки касаний
+        let activeTouches = new Map();  // Для отслеживания касаний
+
+        // Функции для обработки
         function startLeft() {
             if (gameRunning) {
                 player.dx = -player.speed;
@@ -748,7 +817,7 @@
         }
 
         function stopLeft() {
-            if (gameRunning) {
+            if (gameRunning && player.dx < 0) {
                 player.dx = 0;
                 leftBtn.classList.remove('active');
             }
@@ -762,11 +831,14 @@
         }
 
         function stopRight() {
-            if (gameRunning) {
+            if (gameRunning && player.dx > 0) {
                 player.dx = 0;
                 rightBtn.classList.remove('active');
             }
         }
+
+        let firing = false;
+        let fireInterval;
 
         function startFire() {
             if (gameRunning && !firing) {
@@ -774,85 +846,92 @@
                 fireBtn.classList.add('active');
                 shoot();
                 fireInterval = setInterval(() => {
-                    if (gameRunning) shoot();
+                    if (gameRunning && firing) shoot();
                 }, shootCooldown);
             }
         }
 
         function stopFire() {
-            firing = false;
-            fireBtn.classList.remove('active');
-            clearInterval(fireInterval);
+            if (firing) {
+                firing = false;
+                fireBtn.classList.remove('active');
+                clearInterval(fireInterval);
+            }
         }
 
-        // Обработчики для кнопок
-        leftBtn.addEventListener('touchstart', (e) => {
+        // Обработчики с touchcancel и touchmove для предотвращения залипания
+        function handleTouchStart(e, actionStart) {
             e.preventDefault();
-            startLeft();
-        });
+            for (let touch of e.changedTouches) {
+                activeTouches.set(touch.identifier, actionStart);
+            }
+            actionStart();
+        }
 
-        leftBtn.addEventListener('touchend', (e) => {
+        function handleTouchEnd(e, actionStop) {
             e.preventDefault();
+            for (let touch of e.changedTouches) {
+                activeTouches.delete(touch.identifier);
+            }
+            actionStop();
+            if (activeTouches.size === 0) {
+                // Дополнительная проверка
+                stopLeft();
+                stopRight();
+                stopFire();
+            }
+        }
+
+        // Для кнопок и зон
+        leftBtn.addEventListener('touchstart', (e) => handleTouchStart(e, startLeft));
+        leftBtn.addEventListener('touchend', (e) => handleTouchEnd(e, stopLeft));
+        leftBtn.addEventListener('touchcancel', (e) => handleTouchEnd(e, stopLeft));
+
+        rightBtn.addEventListener('touchstart', (e) => handleTouchStart(e, startRight));
+        rightBtn.addEventListener('touchend', (e) => handleTouchEnd(e, stopRight));
+        rightBtn.addEventListener('touchcancel', (e) => handleTouchEnd(e, stopRight));
+
+        leftZone.addEventListener('touchstart', (e) => handleTouchStart(e, startLeft));
+        leftZone.addEventListener('touchend', (e) => handleTouchEnd(e, stopLeft));
+        leftZone.addEventListener('touchcancel', (e) => handleTouchEnd(e, stopLeft));
+
+        rightZone.addEventListener('touchstart', (e) => handleTouchStart(e, startRight));
+        rightZone.addEventListener('touchend', (e) => handleTouchEnd(e, stopRight));
+        rightZone.addEventListener('touchcancel', (e) => handleTouchEnd(e, stopRight));
+
+        fireBtn.addEventListener('touchstart', (e) => handleTouchStart(e, startFire));
+        fireBtn.addEventListener('touchend', (e) => handleTouchEnd(e, stopFire));
+        fireBtn.addEventListener('touchcancel', (e) => handleTouchEnd(e, stopFire));
+
+        // Глобальный обработчик для предотвращения залипания при потере фокуса или множественных касаниях
+        document.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0) {
+                stopLeft();
+                stopRight();
+                stopFire();
+                activeTouches.clear();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchcancel', (e) => {
             stopLeft();
-        });
-
-        rightBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startRight();
-        });
-
-        rightBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
             stopRight();
-        });
-
-        // Обработчики для зон касания
-        leftZone.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startLeft();
-        });
-
-        leftZone.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopLeft();
-        });
-
-        rightZone.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startRight();
-        });
-
-        rightZone.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopRight();
-        });
-
-        // Обработчики для кнопки огня
-        let firing = false;
-        let fireInterval;
-
-        fireBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startFire();
-        });
-
-        fireBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
             stopFire();
-        });
+            activeTouches.clear();
+        }, { passive: false });
 
-        // Обработчики для предотвращения залипания при потере фокуса
         window.addEventListener('blur', () => {
             stopLeft();
             stopRight();
             stopFire();
+            activeTouches.clear();
         });
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('controls').style.display = 'flex';
-            document.getElementById('fireBtn').style.display = 'flex';
+            document.getElementById('fireBtn').style.display = 'block';  // Изменил на block для лучшей совместимости
             gameRunning = true;
             score = 0;
             lives = 3;
@@ -883,10 +962,14 @@
             startGame();
         }
 
-        // Предотвращение скролла
+        // Предотвращение скролла и выделения
         document.body.addEventListener('touchmove', (e) => {
             e.preventDefault();
         }, { passive: false });
+
+        document.body.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+        });
     </script>
 </body>
 </html>
