@@ -1,508 +1,351 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XDUST - Galactic Adventure</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPACEDUST - Cosmic Strategy</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #000000 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Orbitron', monospace; overflow: hidden; touch-action: none; color: #fff; }
+        
+        /* Общие стили */
+        #gameContainer, #galaxyContainer { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
         }
         
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a1a;
-            color: white;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
+        #galaxyContainer { 
+            display: none; 
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(120, 0, 200, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 100, 255, 0.3) 0%, transparent 50%);
         }
         
-        /* Общие стили для обоих режимов */
-        .container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        
-        #galaxyContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Галактическая карта */
-        .galaxy-map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #1a1a3a 0%, #0a0a1a 70%);
-            z-index: 1;
-        }
-        
-        /* Звезды */
-        .star {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-        }
-        
-        /* Планеты */
-        .planet {
-            position: absolute;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Название игры */
-        .game-title {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-            z-index: 10;
-        }
-        
-        /* Панель ресурсов */
-        .resource-panel {
-            position: absolute;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            background: rgba(20, 20, 40, 0.8);
-            padding: 10px 20px;
-            border-radius: 20px;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(100, 100, 255, 0.3);
-        }
-        
-        .resource {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .resource-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-        }
-        
-        .energy .resource-icon {
-            background: #ffcc00;
-        }
-        
-        .minerals .resource-icon {
-            background: #00aaff;
-        }
-        
-        .credits .resource-icon {
-            background: #00cc66;
-        }
-        
-        /* Миссионное оповещение */
-        .mission-alert {
-            position: absolute;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(200, 50, 50, 0.8);
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 100, 100, 0.5);
-            text-align: center;
-            max-width: 80%;
-        }
-        
-        /* Кнопка переключения режимов */
-        .mode-toggle {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(30, 30, 60, 0.8);
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(100, 100, 255, 0.3);
-        }
-        
-        /* Навигационная панель */
-        .nav-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 10;
-        }
-        
-        .nav-button {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(30, 30, 60, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(100, 100, 255, 0.3);
+        canvas { 
+            border: 0.314px solid rgba(0, 255, 255, 0.7); 
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2); 
+            background: #000; 
+            display: block; 
+            max-width: 100%; 
+            max-height: 100%; 
+            border-radius: 4px; 
         }
         
         /* Стили для шутера */
-        #gameContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #000;
+        #ui { 
+            position: absolute; 
+            top: 80px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            color: #00ffff; 
+            font-size: 16px; 
+            text-shadow: 0 0 10px #00ffff; 
+            z-index: 10; 
+            pointer-events: none; 
+            background: rgba(0, 20, 30, 0.7); 
+            padding: 10px 20px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(0, 255, 255, 0.5); 
+            display: flex; 
+            flex-direction: row; 
+            gap: 20px; 
+            animation: ui-glow 2s infinite alternate; 
         }
         
-        .stars {
+        @keyframes ui-glow { 
+            from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); } 
+            to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); } 
+        }
+        
+        .ui-item { display: flex; align-items: center; gap: 8px; }
+        
+        #controls { 
+            position: absolute; 
+            bottom: 20px; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 20px; 
+            z-index: 15; 
+        }
+        
+        .control-btn { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            background: rgba(0, 255, 255, 0.2); 
+            border: 2px solid #00ffff; 
+            color: #00ffff; 
+            font-size: 24px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            touch-action: none; 
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); 
+            transition: all 0.1s; 
+            backdrop-filter: blur(5px); 
+        }
+        
+        .control-btn.active { 
+            background: rgba(0, 255, 255, 0.6); 
+            transform: scale(0.9); 
+            box-shadow: 0 0 11px rgba(0, 255, 255, 0.8); 
+        }
+        
+        #fireBtn { 
+            width: 80px; 
+            height: 80px; 
+            background: rgba(255, 50, 50, 0.2); 
+            border-color: #ff3232; 
+            color: #ff3232; 
+            font-size: 16px; 
+            font-weight: bold; 
+            position: absolute; 
+            bottom: 40px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5); 
+            touch-action: manipulation; 
+            text-align: center; 
+            line-height: 1.2; 
+        }
+        
+        #fireBtn.active { 
+            background: rgba(255, 50, 50, 0.6); 
+            transform: translateX(-50%) scale(0.9); 
+            box-shadow: 0 0 11px rgba(255, 50, 50, 0.8); 
+        }
+        
+        #gameOver, #startScreen { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            text-align: center; 
+            z-index: 20; 
+            width: 90%; 
+            max-width: 400px; 
+            background: rgba(10, 20, 40, 0.9); 
+            padding: 30px; 
+            border-radius: 15px; 
+            border: 2px solid rgba(0, 255, 255, 0.7); 
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5); 
+            backdrop-filter: blur(10px); 
+            animation: screen-pulse 1.5s infinite alternate; 
+        }
+        
+        @keyframes screen-pulse { 
+            from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 
+            to { transform: translate(-50%, -50%) scale(1.02); opacity: 1; } 
+        }
+        
+        #gameOver { display: none; }
+        
+        #startScreen h1 { 
+            font-size: 36px; 
+            text-shadow: 0 0 20px #00ffff; 
+            margin-bottom: 20px; 
+            animation: pulse 2s infinite; 
+            background: linear-gradient(to right, #00ffff, #ff00ff); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        
+        #gameOver h1 { 
+            font-size: 32px; 
+            text-shadow: 0 0 20px #ff3232; 
+            margin-bottom: 10px; 
+            color: #ff3232; 
+        }
+        
+        #startScreen p, #gameOver p { 
+            font-size: 16px; 
+            margin: 10px 0; 
+            color: #a0e0ff; 
+            line-height: 1.5; 
+        }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .btn { 
+            background: transparent; 
+            border: 2px solid #00ffff; 
+            color: #00ffff; 
+            padding: 15px 40px; 
+            font-size: 18px; 
+            margin-top: 20px; 
+            transition: all 0.3s; 
+            font-family: 'Orbitron', monospace; 
+            touch-action: manipulation; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            font-weight: bold; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .btn::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: -100%; 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent); 
+            transition: left 0.5s; 
+        }
+        
+        .btn:hover::before, .btn:active::before { left: 100%; }
+        .btn:active { background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 20px #00ffff; }
+        
+        #leftZone, #rightZone { 
+            position: absolute; 
+            bottom: 0; 
+            width: 35%; 
+            height: 150px; 
+            z-index: 14; 
+            opacity: 0; 
+        }
+        
+        #leftZone { left: 0; } 
+        #rightZone { right: 0; }
+        
+        .instructions { margin-top: 15px; font-size: 14px; color: #80c0ff; }
+        
+        .power-ups { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+        
+        .power-up { 
+            width: 33px; 
+            height: 33px; 
+            border-radius: 50%; 
+            background: rgba(255, 215, 0, 0.3); 
+            border: 1px solid gold; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 12px; 
+            animation: power-glow 1s infinite alternate; 
+        }
+        
+        @keyframes power-glow { from { box-shadow: 0 0 5px gold; } to { box-shadow: 0 0 3.14px gold; } }
+        
+        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        
+        .star { position: absolute; background-color: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
+        
+        @keyframes twinkle { from { opacity: 0.5; } to { opacity: 1; } }
+        
+        /* Стили для галактической карты */
+        .sector {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite alternate;
-        }
-        
-        @keyframes twinkle {
-            0% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
-        
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 10;
-            display: flex;
-            gap: 15px;
-        }
-        
-        .ui-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 10px;
-        }
-        
-        #startScreen, #gameOver {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 20;
-            text-align: center;
-        }
-        
-        #gameOver {
-            display: none;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-        }
-        
-        .btn {
-            background: linear-gradient(45deg, #ff00cc, #3333ff);
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1.2rem;
-            margin-top: 20px;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 0, 204, 0.5);
-        }
-        
-        .mode-btn {
-            background: rgba(30, 30, 60, 0.8);
-            border: 1px solid rgba(100, 100, 255, 0.3);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-        }
-        
-        #gameCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
-        }
-        
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 10;
-        }
-        
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(30, 30, 60, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            cursor: pointer;
-            user-select: none;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(100, 100, 255, 0.3);
-        }
-        
-        .control-btn.active {
-            background: rgba(50, 50, 120, 0.8);
-            box-shadow: 0 0 15px rgba(100, 100, 255, 0.5);
-        }
-        
-        #fireBtn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: rgba(200, 50, 50, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            color: white;
             cursor: pointer;
-            user-select: none;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 100, 100, 0.5);
-        }
-        
-        #fireBtn.active {
-            background: rgba(255, 80, 80, 0.8);
-            box-shadow: 0 0 15px rgba(255, 100, 100, 0.5);
-        }
-        
-        #leftZone, #rightZone {
-            position: absolute;
-            bottom: 0;
-            width: 50%;
-            height: 150px;
-            z-index: 8;
-        }
-        
-        #leftZone {
-            left: 0;
-        }
-        
-        #rightZone {
-            right: 0;
-        }
-        
-        .mode-switcher {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-        
-        /* Стили для галактической карты */
-        .sirius-dust {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-            z-index: 10;
-            text-align: center;
-        }
-        
-        .resources-panel {
-            position: absolute;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(20, 20, 40, 0.8);
-            padding: 15px;
-            border-radius: 15px;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(100, 100, 255, 0.3);
-            text-align: center;
-            min-width: 200px;
-        }
-        
-        .resources-panel h3 {
-            margin-bottom: 10px;
-            color: #00ccff;
-        }
-        
-        .sector {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 0.7rem;
-            cursor: pointer;
-            z-index: 5;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            animation: pulse 3s infinite alternate;
         }
         
         .sector.controlled {
-            background: rgba(0, 200, 0, 0.3);
-            border: 2px solid #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            background: radial-gradient(circle, #00ff88, #0088ff);
+            box-shadow: 0 0 30px #00ff88;
         }
         
         .sector.enemy {
-            background: rgba(200, 0, 0, 0.3);
-            border: 2px solid #ff0000;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            background: radial-gradient(circle, #ff4444, #ff0088);
+            box-shadow: 0 0 30px #ff4444;
         }
         
         .sector.neutral {
-            background: rgba(200, 200, 0, 0.3);
-            border: 2px solid #ffff00;
-            box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+            background: radial-gradient(circle, #8888ff, #4444aa);
+            box-shadow: 0 0 20px #8888ff;
         }
         
         .sector:hover {
             transform: scale(1.2);
+            z-index: 10;
+        }
+        
+        .sirius-dust {
+            position: absolute;
+            top: 20%;
+            left: 15%;
+            font-size: 24px;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            animation: glow 2s infinite alternate;
         }
         
         @keyframes glow {
-            0% { box-shadow: 0 0 5px #00ffff; }
-            50% { box-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff; }
-            100% { box-shadow: 0 0 5px #00ffff; }
+            from { opacity: 0.7; transform: scale(1); }
+            to { opacity: 1; transform: scale(1.05); }
         }
-
-        /* === XDUST-9001 СЕКТОР === */
-        .sector.mission-locked {
-            background: rgba(120, 120, 120, 0.15);
-            border: 2px solid #aaa;
-            box-shadow: 0 0 18px 4px #666, 0 0 0 0 #fff;
-            color: #fff;
-            cursor: not-allowed;
-            animation: pulse-lock 1.2s infinite;
+        
+        .resources-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #00ffff;
         }
-        .sector.mission-unlocked {
-            background: rgba(0, 200, 255, 0.23);
-            border: 2px solid #00ffff;
-            box-shadow: 0 0 28px 8px #00ffff, 0 0 0 0 #fff;
-            color: #fff;
+        
+        .mission-alert {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 100, 0, 0.9);
+            padding: 15px 30px;
+            border-radius: 25px;
+            animation: alert-pulse 1.5s infinite;
+        }
+        
+        @keyframes alert-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 0, 0.7); }
+            50% { box-shadow: 0 0 40px rgba(255, 100, 0, 1); }
+        }
+        
+        .mode-switcher {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        
+        .mode-btn {
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 15px;
+            border-radius: 10px;
             cursor: pointer;
-            animation: pulse-unlock 1.2s infinite;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s;
         }
-        @keyframes pulse-lock {
-            0% { box-shadow: 0 0 8px 2px #666; }
-            50% { box-shadow: 0 0 18px 8px #aaa; }
-            100% { box-shadow: 0 0 8px 2px #666; }
-        }
-        @keyframes pulse-unlock {
-            0% { box-shadow: 0 0 18px 4px #00ffff; }
-            50% { box-shadow: 0 0 28px 12px #00ffff; }
-            100% { box-shadow: 0 0 18px 4px #00ffff; }
+        
+        .mode-btn:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 10px #00ffff;
         }
     </style>
 </head>
 <body>
-    <!-- Галактическая карта -->
-    <div id="galaxyContainer" class="container">
-        <div class="galaxy-map" id="galaxyMap">
-            <!-- Звезды и планеты будут сгенерированы JavaScript -->
-        </div>
-        
-        <div class="game-title">XDUST</div>
-        
-        <div class="resource-panel">
-            <div class="resource energy">
-                <div class="resource-icon"></div>
-                <span>1.2K</span>
-            </div>
-            <div class="resource minerals">
-                <div class="resource-icon"></div>
-                <span>850</span>
-            </div>
-            <div class="resource credits">
-                <div class="resource-icon"></div>
-                <span>2.5K</span>
-            </div>
-        </div>
-        
-        <div class="mission-alert">
-            Миссия: Защитить сектор от вторжения
-        </div>
-        
-        <div class="mode-toggle" onclick="switchToShooter()">
-            Режим: Карта
-        </div>
-        
-        <div class="nav-panel">
-            <div class="nav-button">+</div>
-            <div class="nav-button">-</div>
-        </div>
-    </div>
-
     <!-- Космический шутер -->
-    <div id="gameContainer" class="container">
+    <div id="gameContainer">
         <div class="stars" id="stars"></div>
         
         <div id="ui">
@@ -549,143 +392,154 @@
         </div>
     </div>
 
-    <script>
-        // Глобальные переменные для ресурсов
-        let currentEnergy = 1500;
-        let currentMetals = 800;
-        let currentCrystals = 300;
-        let miningInterval; // Переменная для хранения ID интервала майнинга
+    <!-- Галактическая карта -->
+    <div id="galaxyContainer">
+        <div class="sirius-dust">✨ XDUST С СИРИУСА! ✨</div>
+        
+        <div class="resources-panel">
+            <h3>Ресурсы XDUST</h3>
+            <div>⚡ Энергия: <span id="energy">1500</span></div>
+            <div>🪐 Металлы: <span id="metals">800</span></div>
+            <div>💎 Кристаллы: <span id="crystals">300</span></div>
+            <div>🚀 Очки: <span id="galaxyScore">0</span></div>
+        </div>
+        
+        <div class="mission-alert">
+            🚨 Сириус передает XDUST для усиления флота!
+        </div>
+        
+        <div class="mode-switcher">
+            <button class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+        </div>
+    </div>
 
+    <script>
         // === ПЕРЕКЛЮЧЕНИЕ МЕЖДУ РЕЖИМАМИ ===
         function switchToGalaxy() {
             document.getElementById('gameContainer').style.display = 'none';
             document.getElementById('galaxyContainer').style.display = 'flex';
             initGalaxyMap();
-            startMining(); // Начинаем майнинг при переходе на карту
         }
-
+        
         function switchToShooter() {
             document.getElementById('galaxyContainer').style.display = 'none';
             document.getElementById('gameContainer').style.display = 'flex';
-            stopMining(); // Останавливаем майнинг при переходе в шутер (чтобы не лагало в бою)
         }
-
-        // --- ФУНКЦИИ МАЙНИНГА ---
-        function startMining() {
-            if (miningInterval) clearInterval(miningInterval);
-
-            // Интервал будет срабатывать каждые 2 секунды (2000 мс)
-            miningInterval = setInterval(() => {
-                // Базовая скорость майнинга
-                let baseRate = 1;
-                
-                // Бонус к майнингу: 1% от текущего счета шутера (score) каждые 2 секунды
-                let scoreBonus = score * 0.01;
-                
-                const totalProduction = baseRate + scoreBonus;
-
-                // Распределение добычи
-                const energyGain = totalProduction;
-                const metalsGain = totalProduction * 0.7;
-                const crystalsGain = totalProduction * 0.3;
-
-                // Обновление глобальных запасов
-                currentEnergy += energyGain;
-                currentMetals += metalsGain;
-                currentCrystals += crystalsGain;
-
-                // Обновление UI
-                updateGalaxyResources(0);
-                
-                // Визуальное оповещение о майнинге
-                const alert = document.querySelector('.mission-alert');
-                alert.textContent = `⛏️ Майнинг $XDUST: +${totalProduction.toFixed(2)} / 2с`;
-
-            }, 2000);
-        }
-
-        function stopMining() {
-            if (miningInterval) {
-                clearInterval(miningInterval);
-                miningInterval = null;
-            }
-        }
-
-        // === ГАЛАКТИЧЕСКАЯ КАРТА (Обновление) ===
+        
+        // === ГАЛАКТИЧЕСКАЯ КАРТА ===
         function initGalaxyMap() {
-            const galaxyMap = document.getElementById('galaxyMap');
-            galaxyMap.innerHTML = '';
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            galaxyContainer.innerHTML = `
+                <div class="sirius-dust">✨ XDUST С СИРИУСА! ✨</div>
+                <div class="resources-panel">
+                    <h3>Ресурсы XDUST</h3>
+                    <div>⚡ Энергия: <span id="energy">1500</span></div>
+                    <div>🪐 Металлы: <span id="metals">800</span></div>
+                    <div>💎 Кристаллы: <span id="crystals">300</span></div>
+                    <div>🚀 Очки: <span id="galaxyScore">${score}</span></div>
+                </div>
+                <div class="mission-alert">
+                    🚨 Сириус передает XDUST для усиления флота!
+                </div>
+                <div class="mode-switcher">
+                    <button class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+                </div>
+            `;
+            
+            // Создаем галактическую карту
+            const sectors = [
+                { id: 1, x: 15, y: 20, name: "СИРИУС", type: "controlled", resources: 2000 },
+                { id: 2, x: 25, y: 60, name: "АЛЬФА ЦЕНТАВРА", type: "enemy", resources: 1500 },
+                { id: 3, x: 50, y: 30, name: "БЕТЕЛЬГЕЙЗЕ", type: "neutral", resources: 800 },
+                { id: 4, x: 70, y: 50, name: "ПРОЦИОН", type: "controlled", resources: 1200 },
+                { id: 5, x: 40, y: 70, name: "ВЕГА", type: "enemy", resources: 1800 },
+                { id: 6, x: 60, y: 20, name: "АРКТУР", type: "neutral", resources: 600 },
+                { id: 7, x: 80, y: 40, name: "РИГЕЛЬ", type: "controlled", resources: 2500 }
+            ];
 
-            // Создание звезд
-            for (let i = 0; i < 200; i++) {
-                const star = document.createElement('div');
-                star.classList.add('star');
-                star.style.left = `${Math.random() * 100}%`;
-                star.style.top = `${Math.random() * 100}%`;
-                star.style.opacity = Math.random() * 0.7 + 0.3;
-                galaxyMap.appendChild(star);
-            }
-
-            // Создание планет
-            const planetColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
-            for (let i = 0; i < 15; i++) {
-                const planet = document.createElement('div');
-                planet.classList.add('planet');
-                const size = Math.random() * 30 + 10;
-                planet.style.width = `${size}px`;
-                planet.style.height = `${size}px`;
-                planet.style.left = `${Math.random() * 90 + 5}%`;
-                planet.style.top = `${Math.random() * 90 + 5}%`;
-                planet.style.background = planetColors[Math.floor(Math.random() * planetColors.length)];
-                galaxyMap.appendChild(planet);
-            }
-
-            // === Добавление сектора $XDUST-9001 ===
-            // Параметры сектора
-            const sector9001 = document.createElement('div');
-            sector9001.classList.add('sector');
-            sector9001.style.left = '65%';
-            sector9001.style.top = '33%';
-            sector9001.style.width = '70px';
-            sector9001.style.height = '70px';
-            sector9001.style.fontSize = '0.85rem';
-            sector9001.style.fontWeight = 'bold';
-            sector9001.style.display = 'flex';
-            sector9001.style.alignItems = 'center';
-            sector9001.style.justifyContent = 'center';
-            sector9001.style.textShadow = '0 0 6px #00ffff, 0 0 2px #000';
-            sector9001.innerHTML = '<div>$XDUST<br><span style="font-size:0.7em;">9001</span></div>';
-            // Проверка доступности сектора (например, по энергии)
-            let unlocked = currentEnergy >= 9001;
-            sector9001.classList.add(unlocked ? 'mission-unlocked' : 'mission-locked');
-            sector9001.title = unlocked
-                ? 'Войти в сектор $XDUST-9001'
-                : 'Для доступа требуется 9001⚡ энергии';
-            sector9001.addEventListener('click', function () {
-                handleXDUST9001Click(unlocked);
-            });
-            galaxyMap.appendChild(sector9001);
-
-            // Анимация мерцания звезд
-            const stars = galaxyMap.querySelectorAll('.star');
-            setInterval(() => {
-                stars.forEach(star => {
-                    if (Math.random() > 0.7) {
-                        star.style.opacity = Math.random() * 0.7 + 0.3;
+            // Создаем секторы на карте
+            sectors.forEach(sector => {
+                const sectorElement = document.createElement('div');
+                sectorElement.className = `sector ${sector.type}`;
+                sectorElement.style.left = `${sector.x}%`;
+                sectorElement.style.top = `${sector.y}%`;
+                sectorElement.innerHTML = `
+                    <div style="text-align: center; font-size: 10px;">
+                        <strong>${sector.name}</strong><br>
+                        ⚡${sector.resources}
+                    </div>
+                `;
+                
+                sectorElement.addEventListener('click', () => {
+                    alert(`🚀 Выбран сектор: ${sector.name}\n💎 Ресурсы: ${sector.resources} XDUST`);
+                    
+                    // Анимация передачи ресурсов с Сириуса
+                    if (sector.type === 'enemy') {
+                        createResourceStream(sector);
                     }
                 });
-            }, 500);
+                
+                galaxyContainer.appendChild(sectorElement);
+            });
+
+            // Создаем звездный фон
+            createGalaxyStars();
+            
+            // Автоматическая передача ресурсов с Сириуса
+            setInterval(() => {
+                const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
+                if (randomSector.name !== "СИРИУС") {
+                    createResourceStream(randomSector);
+                }
+            }, 5000);
         }
 
-        // Обработка нажатия на сектор $XDUST-9001
-        function handleXDUST9001Click(unlocked) {
-            if (!unlocked) {
-                alert('Для доступа к сектору $XDUST-9001 требуется 9001⚡ энергии!');
-                return;
-            }
-            // Переход к особой миссии или запуск боя
-            alert('Добро пожаловать в сектор $XDUST-9001!\n(Здесь будет особая миссия)');
-            // Здесь можно добавить переход к миссии или иную механику
+        // Анимация потока ресурсов с Сириуса
+        function createResourceStream(targetSector) {
+            const sectors = [
+                { id: 1, x: 15, y: 20, name: "СИРИУС", type: "controlled", resources: 2000 },
+                { id: 2, x: 25, y: 60, name: "АЛЬФА ЦЕНТАВРА", type: "enemy", resources: 1500 },
+                { id: 3, x: 50, y: 30, name: "БЕТЕЛЬГЕЙЗЕ", type: "neutral", resources: 800 },
+                { id: 4, x: 70, y: 50, name: "ПРОЦИОН", type: "controlled", resources: 1200 },
+                { id: 5, x: 40, y: 70, name: "ВЕГА", type: "enemy", resources: 1800 },
+                { id: 6, x: 60, y: 20, name: "АРКТУР", type: "neutral", resources: 600 },
+                { id: 7, x: 80, y: 40, name: "РИГЕЛЬ", type: "controlled", resources: 2500 }
+            ];
+            
+            const sirius = sectors.find(s => s.name === "СИРИУС");
+            const stream = document.createElement('div');
+            stream.style.position = 'absolute';
+            stream.style.left = `${sirius.x}%`;
+            stream.style.top = `${sirius.y}%`;
+            stream.style.width = '4px';
+            stream.style.height = '4px';
+            stream.style.background = '#00ffff';
+            stream.style.borderRadius = '50%';
+            stream.style.boxShadow = '0 0 10px #00ffff';
+            document.getElementById('galaxyContainer').appendChild(stream);
+            
+            // Анимация движения
+            const animation = stream.animate([
+                { 
+                    left: `${sirius.x}%`,
+                    top: `${sirius.y}%`,
+                    opacity: 1
+                },
+                { 
+                    left: `${targetSector.x}%`,
+                    top: `${targetSector.y}%`,
+                    opacity: 0
+                }
+            ], {
+                duration: 2000,
+                easing: 'ease-out'
+            });
+            
+            animation.onfinish = () => {
+                stream.remove();
+                // Обновляем ресурсы
+                updateGalaxyResources(targetSector.resources * 0.3);
+            };
         }
 
         function updateGalaxyResources(amount) {
@@ -694,22 +548,93 @@
             const crystalsElem = document.getElementById('crystals');
             const scoreElem = document.getElementById('galaxyScore');
             
-            // Используем глобальные переменные для отображения
-            currentEnergy += amount;
-            currentMetals += amount * 0.7;
-            currentCrystals += amount * 0.3;
+            let energy = parseInt(energyElem.textContent) + amount;
+            let metals = parseInt(metalsElem.textContent) + amount * 0.7;
+            let crystals = parseInt(crystalsElem.textContent) + amount * 0.3;
             
-            energyElem.textContent = Math.floor(currentEnergy);
-            metalsElem.textContent = Math.floor(currentMetals);
-            crystalsElem.textContent = Math.floor(currentCrystals);
-            scoreElem.textContent = score; // Счет шутера также отображается на карте
+            energyElem.textContent = Math.floor(energy);
+            metalsElem.textContent = Math.floor(metals);
+            crystalsElem.textContent = Math.floor(crystals);
+            scoreElem.textContent = score;
             
-            // ... (Остальной код эффекта получения ресурсов остается прежним) ...
+            // Эффект получения ресурсов
+            document.body.style.animation = 'glow 0.5s';
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 500);
         }
-        
 
+        function createGalaxyStars() {
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.style.position = 'absolute';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.width = `${Math.random() * 2 + 1}px`;
+                star.style.height = star.style.width;
+                star.style.background = 'white';
+                star.style.borderRadius = '50%';
+                star.style.opacity = Math.random() * 0.7 + 0.3;
+                star.style.animation = `twinkle ${Math.random() * 3 + 2}s infinite alternate`;
+                galaxyContainer.appendChild(star);
+            }
+        }
 
         // === КОСМИЧЕСКИЙ ШУТЕР ===
+        // === ЗВУКИ: ПУЛ ДЛЯ БЕЗЛАГОВОЙ ИГРЫ ===
+        // Используем реальные файлы из вашего репозитория
+        const shootSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.m4a')
+        ];
+        
+        const explosionSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.m4a')
+        ];
+        
+        const powerupSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.m4a')
+        ];
+
+        let shootIndex = 0;
+        let explosionIndex = 0;
+        let powerupIndex = 0;
+
+        function playShoot() {
+            const s = shootSounds[shootIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            shootIndex = (shootIndex + 1) % shootSounds.length;
+        }
+
+        function playExplosion() {
+            const s = explosionSounds[explosionIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            explosionIndex = (explosionIndex + 1) % explosionSounds.length;
+        }
+
+        function playPowerup() {
+            const s = powerupSounds[powerupIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            powerupIndex = (powerupIndex + 1) % powerupSounds.length;
+        }
+
+        // Предзагрузка звуков
+        function preloadSounds() {
+            [...shootSounds, ...explosionSounds, ...powerupSounds].forEach(sound => {
+                sound.load();
+                sound.volume = 0.7;
+            });
+        }
+
         // Telegram WebApp
         let tg = window.Telegram?.WebApp;
         if (tg) { tg.expand(); tg.ready(); }
@@ -784,6 +709,7 @@
                 const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
                 particles.push({ x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 30 + Math.random() * 20, size: 3 + Math.random() * 2, color: colors[Math.floor(Math.random() * colors.length)] });
             }
+            playExplosion();
         }
 
         function createPowerUp(x, y, forcedType = null) {
@@ -798,6 +724,7 @@
         }
 
         function applyPowerUp(type) {
+            playPowerup();
             player.flashTime = Date.now() + 300;
             switch(type) {
                 case 'shield': shieldActive = true; setTimeout(() => { shieldActive = false; }, 10000); break;
@@ -807,7 +734,7 @@
             }
         }
 
-        // === РИСОВАНИЕ ===
+        // === РИСОВАНИЕ (ВСЁ ПОЛНОСТЬЮ) ===
         function drawPlayer() {
             ctx.save();
             let blink = false;
@@ -1088,6 +1015,7 @@
                     speed: isLaser ? 12 : 8
                 });
                 lastShot = now;
+                playShoot();
             }
         }
 
@@ -1319,11 +1247,8 @@
 
         document.body.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
-        // Инициализация при загрузке
-        window.addEventListener('load', () => {
-            initGalaxyMap();
-            switchToGalaxy(); // Начинаем с галактической карты
-        });
+        // Предзагрузка звуков при загрузке страницы
+        window.addEventListener('load', preloadSounds);
     </script>
 </body>
 </html>
