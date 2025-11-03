@@ -66,62 +66,6 @@
         
         .ui-item { display: flex; align-items: center; gap: 8px; }
         
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 15;
-        }
-        
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(0, 255, 255, 0.2);
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            font-size: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            touch-action: none;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-            transition: all 0.1s;
-            backdrop-filter: blur(5px);
-        }
-        
-        .control-btn.active {
-            background: rgba(0, 255, 255, 0.6);
-            transform: scale(0.9);
-            box-shadow: 0 0 11px rgba(0, 255, 255, 0.8);
-        }
-        
-        #fireBtn {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 50, 50, 0.2);
-            border-color: #ff3232;
-            color: #ff3232;
-            font-size: 16px;
-            font-weight: bold;
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
-            touch-action: manipulation;
-            text-align: center;
-            line-height: 1.2;
-        }
-        
-        #fireBtn.active {
-            background: rgba(255, 50, 50, 0.6);
-            transform: translateX(-50%) scale(0.9);
-            box-shadow: 0 0 11px rgba(255, 50, 50, 0.8);
-        }
         
         #gameOver, #startScreen {
             position: absolute;
@@ -346,29 +290,64 @@
             50% { box-shadow: 0 0 40px rgba(255, 100, 0, 1); }
         }
         
-        /* НОВЫЙ СТИЛЬ: Кнопка переключения, интегрированная в панель управления */
-        #controls-bottom {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
+
+        /* УНИФИЦИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ */
+        #bottomPanel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 20px 20px 20px;
+            box-sizing: border-box;
             z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
         }
 
-        #mapBtn, #shooterBtn {
+        .control-btn {
             width: 70px;
             height: 70px;
             border-radius: 50%;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            transition: all 0.1s;
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+
+        #fireBtn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 50, 50, 0.2);
+            border-color: #ff3232;
+            color: #ff3232;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+            touch-action: manipulation;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        #mapBtn, #shooterBtn {
+            width: 60px;
+            height: 60px;
             background: rgba(0, 150, 255, 0.3);
             border: 2px solid #00aaff;
             color: #00aaff;
             font-size: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
-            backdrop-filter: blur(5px);
+            pointer-events: auto;
         }
 
         /* Эффект дыхания и сияния для сектора $XDUST-9001 */
@@ -445,21 +424,20 @@
         </div>
         
         <canvas id="gameCanvas"></canvas>
-        
-        <div id="controls">
-            <div class="control-btn" id="leftBtn">◀</div>
-            <div class="control-btn" id="rightBtn">▶</div>
+
+        <div id="bottomPanel" style="display: none;">
+            <button id="mapBtn" class="control-btn" onclick="switchToGalaxy()">🌌</button>
+            
+            <div style="display: flex; gap: 15px; pointer-events: auto;">
+                <div class="control-btn" id="leftBtn">◀</div>
+                <div class="control-btn" id="rightBtn">▶</div>
+            </div>
+            
+            <div id="fireBtn" class="control-btn">FIRE</div>
         </div>
-        
-        <div id="fireBtn" class="control-btn">FIRE</div>
-        
+
         <div id="leftZone"></div>
         <div id="rightZone"></div>
-        
-        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ВНИЗУ -->
-        <div id="controls-bottom">
-            <button id="mapBtn" class="mode-btn" onclick="switchToGalaxy()">🌌 Карта</button>
-        </div>
     </div>
 
     <!-- Галактическая карта -->
@@ -478,9 +456,9 @@
             🚨 Сириус передает XDUST для усиления флота!
         </div>
         
-        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ВНИЗУ -->
-        <div id="controls-bottom">
-            <button id="shooterBtn" class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+        <!-- УНИФИЦИРОВАННАЯ КНОПКА ВНИЗУ -->
+        <div id="bottomPanel-galaxy" style="position: fixed; bottom: 0; right: 20px; z-index: 100; padding-bottom: 20px;">
+            <button id="shooterBtn" class="control-btn" onclick="switchToShooter()">🎮</button>
         </div>
     </div>
 
@@ -495,6 +473,9 @@
         function switchToGalaxy() {
             document.getElementById('gameContainer').style.display = 'none';
             document.getElementById('galaxyContainer').style.display = 'flex';
+            document.getElementById('bottomPanel').style.display = 'none';
+            const galaxyPanel = document.getElementById('bottomPanel-galaxy');
+            if (galaxyPanel) galaxyPanel.style.display = 'block';
             initGalaxyMap();
             startMining();
         }
@@ -502,6 +483,9 @@
         function switchToShooter() {
             document.getElementById('galaxyContainer').style.display = 'none';
             document.getElementById('gameContainer').style.display = 'flex';
+            document.getElementById('bottomPanel').style.display = 'flex';
+            const galaxyPanel = document.getElementById('bottomPanel-galaxy');
+            if (galaxyPanel) galaxyPanel.style.display = 'none';
             stopMining();
         }
 
@@ -1397,21 +1381,19 @@
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('controls').style.display = 'flex';
-            document.getElementById('fireBtn').style.display = 'block';
-            gameRunning = true; score = 0; lives = 3; bullets = []; enemies = []; particles = []; powerUps = [];
-            shieldActive = false; speedBoostEnd = 0; laserModeEnd = 0; megaShieldStage = 0; megaShieldEnd = 0;
-            player.x = canvas.width / 2 - 20; player.dx = 0; player.isDamaged = false;
-            enemySpawnRate = 0.03; lastSpawnIncrease = Date.now(); bossActive = false; boss = null; bossTimer = Date.now();
-            updateUI(); resizeCanvas(); createGameStars(); gameLoop();
+            document.getElementById('bottomPanel').style.display = 'flex';
+            gameRunning = true;
+            score = 0; lives = 3; bullets = []; enemies = [];
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            gameLoop();
         }
 
         function endGame() {
-            gameRunning = false; cancelAnimationFrame(animationId);
+            gameRunning = false;
             document.getElementById('finalScore').textContent = score;
             document.getElementById('gameOver').style.display = 'block';
-            document.getElementById('controls').style.display = 'none';
-            document.getElementById('fireBtn').style.display = 'none';
+            document.getElementById('bottomPanel').style.display = 'none';
             if (tg) tg.showAlert(`Игра окончена! Счёт: ${score}`);
         }
 
