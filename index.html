@@ -346,27 +346,29 @@
             50% { box-shadow: 0 0 40px rgba(255, 100, 0, 1); }
         }
         
-        .mode-switcher {
+        /* НОВЫЙ СТИЛЬ: Кнопка переключения, интегрированная в панель управления */
+        #controls-bottom {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 15;
         }
-        
-        .mode-btn {
-            background: rgba(0, 20, 40, 0.8);
-            border: 1px solid #00ffff;
-            color: #00ffff;
-            padding: 10px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-family: 'Orbitron', monospace;
-            transition: all 0.3s;
-        }
-        
-        .mode-btn:hover {
-            background: rgba(0, 255, 255, 0.2);
-            box-shadow: 0 0 10px #00ffff;
+
+        #mapBtn, #shooterBtn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 150, 255, 0.3);
+            border: 2px solid #00aaff;
+            color: #00aaff;
+            font-size: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
+            backdrop-filter: blur(5px);
         }
 
         /* Эффект дыхания и сияния для сектора $XDUST-9001 */
@@ -454,8 +456,9 @@
         <div id="leftZone"></div>
         <div id="rightZone"></div>
         
-        <div class="mode-switcher">
-            <button class="mode-btn" onclick="switchToGalaxy()">🌌 Карта</button>
+        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ВНИЗУ -->
+        <div id="controls-bottom">
+            <button id="mapBtn" class="mode-btn" onclick="switchToGalaxy()">🌌 Карта</button>
         </div>
     </div>
 
@@ -475,8 +478,9 @@
             🚨 Сириус передает XDUST для усиления флота!
         </div>
         
-        <div class="mode-switcher">
-            <button class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ВНИЗУ -->
+        <div id="controls-bottom">
+            <button id="shooterBtn" class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
         </div>
     </div>
 
@@ -534,8 +538,8 @@
                 <div class="mission-alert">
                     🚨 Сириус передает XDUST для усиления флота!
                 </div>
-                <div class="mode-switcher">
-                    <button class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
+                <div id="controls-bottom">
+                    <button id="shooterBtn" class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
                 </div>
             `;
 
