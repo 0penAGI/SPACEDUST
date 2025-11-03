@@ -39,47 +39,6 @@
         .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .star { position: absolute; background-color: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
         @keyframes twinkle { from { opacity: 0.5; } to { opacity: 1; } }
-        
-        /* Стили для XDUST */
-        .xdust-indicator { 
-            position: absolute; 
-            top: 15px; 
-            right: 15px; 
-            background: rgba(255, 215, 0, 0.3); 
-            border: 2px solid gold; 
-            border-radius: 20px; 
-            padding: 10px 15px; 
-            color: gold; 
-            font-size: 14px; 
-            font-weight: bold; 
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 10;
-        }
-        .time-shift-active {
-            animation: time-shift-glow 0.5s infinite alternate;
-            border-color: #ff00ff;
-            box-shadow: 0 0 20px #ff00ff;
-        }
-        @keyframes time-shift-glow {
-            from { box-shadow: 0 0 10px #ff00ff; }
-            to { box-shadow: 0 0 25px #ff00ff, 0 0 35px #ff00ff; }
-        }
-        .time-anomaly {
-            position: absolute;
-            pointer-events: none;
-            z-index: 5;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,0,255,0.3) 0%, transparent 70%);
-            animation: anomaly-pulse 2s infinite;
-        }
-        @keyframes anomaly-pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-        }
     </style>
 </head>
 <body>
@@ -91,31 +50,20 @@
             <div class="ui-item"><span>❤️</span><span id="lives">3</span></div>
         </div>
         
-        <div class="xdust-indicator" id="xdustIndicator">
-            <span>⚡</span>
-            <span id="xdustAmount">0 XDUST</span>
-        </div>
-        
         <div id="startScreen">
             <h1>🚀 SPACEDUST</h1>
-            <p>Защити галактику с помощью XDUST - мощного космического топлива!</p>
-            <p>Временные аномалии от XDUST создают тактические преимущества</p>
-            <div class="instructions">Собирай XDUST для активации временных сдвигов</div>
-            <div class="power-ups">
-                <div class="power-up" style="background: rgba(255,215,0,0.3); border-color: gold;">X</div>
-                <div class="power-up">S</div>
-                <div class="power-up">P</div>
-                <div class="power-up">L</div>
-            </div>
-            <button class="btn" ontouchstart="startGame()" onclick="startGame()">АКТИВИРОВАТЬ XDUST</button>
+            <p>Защити галактику от космических захватчиков!</p>
+            <p>Уничтожай врагов и собирай бонусы</p>
+            <div class="instructions">Используй кнопки для перемещения и стрельбы</div>
+            <div class="power-ups"><div class="power-up">S</div><div class="power-up">P</div><div class="power-up">L</div></div>
+            <button class="btn" ontouchstart="startGame()" onclick="startGame()">СТАРТ</button>
         </div>
         
         <div id="gameOver">
-            <h1>ВРЕМЕННАЯ АНОМАЛИЯ</h1>
+            <h1>МИССИЯ ПРОВАЛЕНА</h1>
             <p>Ваш счёт: <span id="finalScore">0</span></p>
-            <p>Собрано XDUST: <span id="finalXdust">0</span></p>
-            <p>Временной континуум нарушен!</p>
-            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">ПЕРЕЗАПУСТИТЬ ВРЕМЯ</button>
+            <p>Враги захватили сектор!</p>
+            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">ПОВТОРИТЬ</button>
         </div>
         
         <canvas id="gameCanvas"></canvas>
@@ -132,196 +80,22 @@
     </div>
 
     <script>
-        // === ОПТИМИЗИРОВАННАЯ СИСТЕМА ЗВУКОВ С XDUST ===
-        class SoundManager {
-            constructor() {
-                this.enabled = true;
-                this.audioContext = null;
-                this.soundBuffers = {};
-                this.oscillatorCache = [];
-                this.gainCache = [];
-                this.cacheSize = 8;
-                this.timeShiftActive = false;
-                this.init();
-            }
-
-            async init() {
-                try {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    await this.preloadBuffers();
-                    await this.createOscillatorCache();
-                    console.log('Sound system initialized with XDUST time shifts');
-                } catch (e) {
-                    console.log('Audio disabled, using visual time shifts only');
-                    this.enabled = false;
-                }
-            }
-
-            async preloadBuffers() {
-                const sampleRate = this.audioContext.sampleRate;
-                
-                // Взрыв noise buffer
-                const explosionDuration = 0.3;
-                const explosionBufferSize = sampleRate * explosionDuration;
-                const explosionBuffer = this.audioContext.createBuffer(1, explosionBufferSize, sampleRate);
-                const explosionData = explosionBuffer.getChannelData(0);
-                
-                for (let i = 0; i < explosionBufferSize; i++) {
-                    const progress = i / explosionBufferSize;
-                    explosionData[i] = (Math.random() * 2 - 1) * Math.pow(1 - progress, 2);
-                }
-                this.soundBuffers.explosion = explosionBuffer;
-
-                // Powerup buffer (beep sound)
-                const powerupDuration = 0.4;
-                const powerupBufferSize = sampleRate * powerupDuration;
-                const powerupBuffer = this.audioContext.createBuffer(1, powerupBufferSize, sampleRate);
-                const powerupData = powerupBuffer.getChannelData(0);
-                
-                for (let i = 0; i < powerupBufferSize; i++) {
-                    const progress = i / powerupBufferSize;
-                    const freq = 400 + 800 * progress;
-                    powerupData[i] = Math.sin(2 * Math.PI * freq * i / sampleRate) * Math.pow(1 - progress, 0.5) * 0.3;
-                }
-                this.soundBuffers.powerup = powerupBuffer;
-            }
-
-            async createOscillatorCache() {
-                for (let i = 0; i < this.cacheSize; i++) {
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    
-                    oscillator.type = 'sawtooth';
-                    gainNode.gain.value = 0;
-                    
-                    this.oscillatorCache.push(oscillator);
-                    this.gainCache.push(gainNode);
-                }
-            }
-
-            getCachedOscillator() {
-                for (let i = 0; i < this.oscillatorCache.length; i++) {
-                    const oscillator = this.oscillatorCache[i];
-                    if (oscillator && !oscillator.started) {
-                        return { oscillator, gainNode: this.gainCache[i] };
-                    }
-                }
-                const oscillator = this.audioContext.createOscillator();
-                const gainNode = this.audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(this.audioContext.destination);
-                oscillator.type = 'sawtooth';
-                
-                this.oscillatorCache.push(oscillator);
-                this.gainCache.push(gainNode);
-                
-                return { oscillator, gainNode };
-            }
-
-            playShoot() {
-                if (!this.enabled) return;
-                
-                try {
-                    if (this.audioContext.state === 'suspended') {
-                        this.audioContext.resume();
-                    }
-
-                    const { oscillator, gainNode } = this.getCachedOscillator();
-                    
-                    // Эффект временного сдвига XDUST - изменяем звук
-                    let baseFreq = 800;
-                    let endFreq = 200;
-                    let duration = 0.1;
-                    
-                    if (this.timeShiftActive) {
-                        baseFreq = 400 + Math.random() * 800; // Случайные частоты
-                        endFreq = 100 + Math.random() * 300;
-                        duration = 0.05 + Math.random() * 0.1; // Случайная длительность
-                    }
-                    
-                    oscillator.frequency.setValueAtTime(baseFreq, this.audioContext.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(endFreq, this.audioContext.currentTime + duration);
-                    
-                    gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
-                    
-                    try {
-                        oscillator.start();
-                        oscillator.stop(this.audioContext.currentTime + duration);
-                        oscillator.onended = () => {
-                            oscillator.started = false;
-                        };
-                        oscillator.started = true;
-                    } catch (e) {}
-                } catch (e) {
-                    console.log('Shoot sound error (XDUST time shift):', e);
-                }
-            }
-
-            playExplosion() {
-                if (!this.enabled || !this.soundBuffers.explosion) return;
-                
-                try {
-                    if (this.audioContext.state === 'suspended') {
-                        this.audioContext.resume();
-                    }
-
-                    const source = this.audioContext.createBufferSource();
-                    source.buffer = this.soundBuffers.explosion;
-                    
-                    const filter = this.audioContext.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(300, this.audioContext.currentTime);
-                    
-                    const gainNode = this.audioContext.createGain();
-                    gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.3);
-                    
-                    source.connect(filter);
-                    filter.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    
-                    source.start();
-                } catch (e) {
-                    console.log('Explosion sound error:', e);
-                }
-            }
-
-            playPowerup() {
-                if (!this.enabled || !this.soundBuffers.powerup) return;
-                
-                try {
-                    if (this.audioContext.state === 'suspended') {
-                        this.audioContext.resume();
-                    }
-
-                    const source = this.audioContext.createBufferSource();
-                    source.buffer = this.soundBuffers.powerup;
-                    
-                    const gainNode = this.audioContext.createGain();
-                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-                    
-                    source.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    
-                    source.start();
-                } catch (e) {
-                    console.log('Powerup sound error:', e);
-                }
-            }
-
-            activateTimeShift() {
-                this.timeShiftActive = true;
-                setTimeout(() => {
-                    this.timeShiftActive = false;
-                }, 8000); // 8 секунд временного сдвига
-            }
+        // === ЗВУКИ: ПУЛ ДЛЯ БЕЗЛАГОВОЙ ИГРЫ ===
+        const shootSounds = [new Audio('shoot.mp3'), new Audio('shoot.mp3'), new Audio('shoot.mp3')];
+        let shootIndex = 0;
+        function playShoot() {
+            const s = shootSounds[shootIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            shootIndex = (shootIndex + 1) % 3;
         }
+        const explosionSound = new Audio('explosion.mp3');
+        const powerupSound = new Audio('powerup.mp3');
 
-        const soundManager = new SoundManager();
+        // Предзагрузка
+        shootSounds.forEach(s => s.load());
+        explosionSound.load();
+        powerupSound.load();
 
         // Telegram WebApp
         let tg = window.Telegram?.WebApp;
@@ -366,13 +140,12 @@
         let gameRunning = false;
         let score = 0;
         let lives = 3;
-        let xdust = 0;
         let animationId;
         let lastShot = 0;
         const shootCooldown = 250;
 
         const player = { x: canvas.width / 2 - 20, y: canvas.height - 60, width: 40, height: 40, speed: 5, dx: 0, isDamaged: false, damageTime: 0, flashTime: 0 };
-        let bullets = [], enemies = [], stars = [], particles = [], powerUps = [], timeAnomalies = [];
+        let bullets = [], enemies = [], stars = [], particles = [], powerUps = [];
         let enemySpawnRate = 0.03;
         let lastSpawnIncrease = Date.now();
         let bossTimer = Date.now();
@@ -384,8 +157,6 @@
         let megaShieldEnd = 0;
         let speedBoostEnd = 0;
         let laserModeEnd = 0;
-        let timeShiftEnd = 0;
-        let xdustCollected = 0;
 
         function createGameStars() {
             stars = [];
@@ -395,23 +166,12 @@
         }
         createGameStars();
 
-        function createTimeAnomaly(x, y) {
-            timeAnomalies.push({
-                x: x - 50,
-                y: y - 50,
-                width: 100,
-                height: 100,
-                life: 120,
-                maxLife: 120
-            });
-        }
-
         function createParticles(x, y, color = null, count = 12) {
             for (let i = 0; i < count; i++) {
                 const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
                 particles.push({ x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 30 + Math.random() * 20, size: 3 + Math.random() * 2, color: colors[Math.floor(Math.random() * colors.length)] });
             }
-            soundManager.playExplosion();
+            try { explosionSound.currentTime = 0; explosionSound.play(); } catch(e) {}
         }
 
         function createPowerUp(x, y, forcedType = null) {
@@ -419,74 +179,31 @@
                 powerUps.push({ x: x - 10, y: y - 10, width: 24, height: 24, speed: 2, type: forcedType });
                 return;
             }
-            if (Math.random() < 0.4) { // Увеличиваем шанс появления бонусов
-                const types = Math.random() < 0.3 ? 'xdust' : ['shield', 'speed', 'laser'][Math.floor(Math.random() * 3)];
-                powerUps.push({ x: x - 10, y: y - 10, width: 20, height: 20, speed: 2, type: types });
+            if (Math.random() < 0.3) {
+                const types = ['shield', 'speed', 'laser'];
+                powerUps.push({ x: x - 10, y: y - 10, width: 20, height: 20, speed: 2, type: types[Math.floor(Math.random() * types.length)] });
             }
         }
 
         function applyPowerUp(type) {
-            soundManager.playPowerup();
+            try { powerupSound.currentTime = 0; powerupSound.play(); } catch(e) {}
             player.flashTime = Date.now() + 300;
-            
             switch(type) {
-                case 'shield': 
-                    shieldActive = true; 
-                    setTimeout(() => { shieldActive = false; }, 10000); 
-                    break;
-                case 'speed': 
-                    speedBoostEnd = Date.now() + 10000; 
-                    break;
-                case 'laser': 
-                    laserModeEnd = Date.now() + 10000; 
-                    break;
-                case 'megaShield': 
-                    megaShieldStage = 2; 
-                    megaShieldEnd = Date.now() + 15000; 
-                    break;
-                case 'xdust':
-                    xdust += 50;
-                    xdustCollected += 50;
-                    updateUI();
-                    createTimeAnomaly(player.x + player.width/2, player.y + player.height/2);
-                    break;
+                case 'shield': shieldActive = true; setTimeout(() => { shieldActive = false; }, 10000); break;
+                case 'speed': speedBoostEnd = Date.now() + 10000; break;
+                case 'laser': laserModeEnd = Date.now() + 10000; break;
+                case 'megaShield': megaShieldStage = 2; megaShieldEnd = Date.now() + 15000; break;
             }
         }
 
-        function activateTimeShift() {
-            if (xdust >= 100) {
-                xdust -= 100;
-                timeShiftEnd = Date.now() + 8000;
-                soundManager.activateTimeShift();
-                createTimeAnomaly(player.x + player.width/2, player.y + player.height/2);
-                createTimeAnomaly(canvas.width/2, canvas.height/2);
-                updateUI();
-                
-                // Визуальный эффект временного сдвига
-                document.getElementById('xdustIndicator').classList.add('time-shift-active');
-                setTimeout(() => {
-                    document.getElementById('xdustIndicator').classList.remove('time-shift-active');
-                }, 8000);
-            }
-        }
-
-        // === РИСОВАНИЕ ===
+        // === РИСОВАНИЕ (ВСЁ ПОЛНОСТЬЮ) ===
         function drawPlayer() {
             ctx.save();
-            
-            // Эффект временного сдвига
-            if (Date.now() < timeShiftEnd) {
-                ctx.globalAlpha = 0.7 + Math.random() * 0.3;
-                ctx.shadowBlur = 30;
-                ctx.shadowColor = '#ff00ff';
-            }
-            
             let blink = false;
             if (player.isDamaged && Date.now() - player.damageTime < 1000) {
                 blink = Math.floor((Date.now() - player.damageTime) / 60) % 2 === 0;
                 ctx.globalAlpha = blink ? 0.2 : 1;
             }
-            
             if (player.flashTime && Date.now() < player.flashTime) {
                 ctx.save();
                 ctx.globalAlpha = 0.7 * (1 - (player.flashTime - Date.now()) / 300);
@@ -498,7 +215,6 @@
                 ctx.fill();
                 ctx.restore();
             }
-            
             const gradient = ctx.createLinearGradient(player.x, player.y, player.x, player.y + player.height);
             gradient.addColorStop(0, '#00ffff');
             gradient.addColorStop(1, '#0088ff');
@@ -512,14 +228,6 @@
             ctx.lineTo(player.x + player.width, player.y + player.height);
             ctx.closePath();
             ctx.fill();
-            
-            // XDUST индикатор на корабле
-            if (xdust > 0) {
-                ctx.fillStyle = gold;
-                ctx.font = 'bold 10px Orbitron';
-                ctx.fillText(`${xdust}`, player.x + 15, player.y - 5);
-            }
-            
             ctx.fillStyle = '#ff00ff';
             ctx.shadowColor = '#ff00ff';
             ctx.beginPath();
@@ -534,7 +242,6 @@
             ctx.lineTo(player.x + 35, player.y + player.height - 15);
             ctx.closePath();
             ctx.fill();
-            
             const flameHeight = 10 + Math.random() * 10;
             const flameGradient = ctx.createLinearGradient(0, 0, 0, flameHeight);
             flameGradient.addColorStop(0, '#ffff00');
@@ -553,7 +260,6 @@
             ctx.lineTo(player.x + 30, player.y + player.height + flameHeight);
             ctx.closePath();
             ctx.fill();
-            
             if (megaShieldStage > 0 && Date.now() < megaShieldEnd) {
                 ctx.save();
                 ctx.beginPath();
@@ -588,14 +294,6 @@
 
         function drawBullet(bullet) {
             ctx.save();
-            
-            // Эффект временного сдвига для пуль
-            if (Date.now() < timeShiftEnd) {
-                ctx.globalAlpha = 0.8 + Math.random() * 0.2;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#ff00ff';
-            }
-            
             const isLaser = Date.now() < laserModeEnd;
             ctx.fillStyle = isLaser ? '#ff00ff' : '#ffff00';
             ctx.shadowBlur = isLaser ? 15 : 10;
@@ -620,12 +318,6 @@
 
         function drawEnemy(enemy) {
             ctx.save();
-            
-            // Эффект временного сдвига для врагов
-            if (Date.now() < timeShiftEnd) {
-                ctx.globalAlpha = 0.6 + Math.random() * 0.4;
-            }
-            
             const gradient = ctx.createLinearGradient(enemy.x, enemy.y, enemy.x, enemy.y + enemy.height);
             gradient.addColorStop(0, '#ff3232');
             gradient.addColorStop(1, '#880000');
@@ -662,7 +354,6 @@
                 case 'speed': color = '#00ff00'; symbol = 'P'; break;
                 case 'laser': color = '#ffaa00'; symbol = 'L'; break;
                 case 'megaShield': color = '#00ccff'; symbol = 'M'; break;
-                case 'xdust': color = 'gold'; symbol = 'X'; break;
             }
             const gradient = ctx.createRadialGradient(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, 0, powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2);
             gradient.addColorStop(0, '#ffffff');
@@ -678,20 +369,6 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(symbol, powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
-            ctx.restore();
-        }
-
-        function drawTimeAnomaly(anomaly) {
-            ctx.save();
-            const progress = anomaly.life / anomaly.maxLife;
-            ctx.globalAlpha = progress * 0.6;
-            ctx.beginPath();
-            ctx.arc(anomaly.x + anomaly.width/2, anomaly.y + anomaly.height/2, anomaly.width/2, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 0, 255, 0.3)';
-            ctx.fill();
-            ctx.strokeStyle = '#ff00ff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
             ctx.restore();
         }
 
@@ -745,9 +422,7 @@
         // === ОБНОВЛЕНИЯ ===
         function updateStars() {
             stars.forEach(star => {
-                // Замедление времени при активном XDUST
-                const timeFactor = Date.now() < timeShiftEnd ? 0.5 : 1;
-                star.y += star.speed * timeFactor;
+                star.y += star.speed;
                 if (star.y > canvas.height) {
                     star.y = 0;
                     star.x = Math.random() * canvas.width;
@@ -755,23 +430,11 @@
             });
         }
 
-        function updateTimeAnomalies() {
-            for (let i = timeAnomalies.length - 1; i >= 0; i--) {
-                const anomaly = timeAnomalies[i];
-                anomaly.life--;
-                if (anomaly.life <= 0) {
-                    timeAnomalies.splice(i, 1);
-                }
-            }
-        }
-
         function updateParticles() {
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
-                // Замедление частиц при временном сдвиге
-                const timeFactor = Date.now() < timeShiftEnd ? 0.7 : 1;
-                p.x += p.vx * timeFactor;
-                p.y += p.vy * timeFactor;
+                p.x += p.vx;
+                p.y += p.vy;
                 p.vx *= 0.95;
                 p.vy *= 0.95;
                 p.life--;
@@ -788,9 +451,7 @@
                     applyPowerUp(powerUp.type);
                     powerUps.splice(i, 1);
                     createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff', 20);
-                    if (powerUp.type !== 'xdust') {
-                        score += 50;
-                    }
+                    score += 50;
                     updateUI();
                 } else if (powerUp.y > canvas.height) {
                     powerUps.splice(i, 1);
@@ -800,17 +461,13 @@
 
         function movePlayer() {
             const currentSpeed = Date.now() < speedBoostEnd ? player.speed * 1.5 : player.speed;
-            // Ускорение при временном сдвиге
-            const timeFactor = Date.now() < timeShiftEnd ? 1.3 : 1;
-            player.x += player.dx * timeFactor;
+            player.x += player.dx;
             player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
         }
 
         function shoot() {
             const now = Date.now();
-            // Уменьшенный кулдаун при временном сдвиге
-            const currentCooldown = Date.now() < timeShiftEnd ? shootCooldown * 0.6 : shootCooldown;
-            if (now - lastShot > currentCooldown) {
+            if (now - lastShot > shootCooldown) {
                 const isLaser = now < laserModeEnd;
                 bullets.push({
                     x: player.x + player.width / 2 - (isLaser ? 4 : 2),
@@ -820,15 +477,13 @@
                     speed: isLaser ? 12 : 8
                 });
                 lastShot = now;
-                soundManager.playShoot();
+                playShoot();
             }
         }
 
         function updateBullets() {
             for (let i = bullets.length - 1; i >= 0; i--) {
-                // Ускорение пуль при временном сдвиге
-                const timeFactor = Date.now() < timeShiftEnd ? 1.5 : 1;
-                bullets[i].y -= bullets[i].speed * timeFactor;
+                bullets[i].y -= bullets[i].speed;
                 if (bullets[i].y < 0) bullets.splice(i, 1);
             }
         }
@@ -838,11 +493,7 @@
                 enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.1);
                 lastSpawnIncrease = Date.now();
             }
-            
-            // Замедление спавна врагов при временном сдвиге
-            const currentSpawnRate = Date.now() < timeShiftEnd ? enemySpawnRate * 0.5 : enemySpawnRate;
-            
-            if (Math.random() < currentSpawnRate) {
+            if (Math.random() < enemySpawnRate) {
                 const size = 30 + Math.random() * 10;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
@@ -871,9 +522,7 @@
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
-                // Замедление врагов при временном сдвиге
-                const timeFactor = Date.now() < timeShiftEnd ? 0.6 : 1;
-                enemy.y += enemy.speed * timeFactor;
+                enemy.y += enemy.speed;
                 if (enemy.y > canvas.height) {
                     enemies.splice(i, 1);
                     lives--;
@@ -882,8 +531,7 @@
                 }
             }
             if (bossActive && boss) {
-                const timeFactor = Date.now() < timeShiftEnd ? 0.6 : 1;
-                boss.y += boss.speed * timeFactor;
+                boss.y += boss.speed;
                 if (boss.y > 40) boss.y = 40;
             }
         }
@@ -903,12 +551,7 @@
                         createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
                         powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
                         score += 10;
-                        // Шанс выпадения XDUST при убийстве врага
-                        if (Math.random() < 0.2) {
-                            xdust += 5;
-                            xdustCollected += 5;
-                            updateUI();
-                        }
+                        updateUI();
                         break;
                     }
                 }
@@ -944,10 +587,8 @@
                         if (boss.hp <= 0) {
                             createParticles(boss.x + boss.width/2, boss.y + boss.height/2, null, 60);
                             score += 500;
-                            xdust += 50;
-                            xdustCollected += 50;
                             updateUI();
-                            if (Math.random() < 0.3) createPowerUp(boss.x + boss.width/2, boss.y + boss.height/2, 'megaShield');
+                            if (Math.random() < 0.1) createPowerUp(boss.x + boss.width/2, boss.y + boss.height/2, 'megaShield');
                             bossActive = false;
                             boss = null;
                             bossTimer = Date.now();
@@ -982,7 +623,6 @@
         function updateUI() {
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
-            document.getElementById('xdustAmount').textContent = `${xdust} XDUST`;
         }
 
         function gameLoop() {
@@ -990,7 +630,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawStars(); updateStars();
             drawParticles(); updateParticles();
-            timeAnomalies.forEach(drawTimeAnomaly); updateTimeAnomalies();
             powerUps.forEach(drawPowerUp); updatePowerUps();
             drawPlayer(); movePlayer();
             bullets.forEach(drawBullet); updateBullets();
@@ -1031,18 +670,6 @@
         });
         fireBtn.addEventListener('touchstart', e => { e.preventDefault(); setFire(true); });
         fireBtn.addEventListener('touchend', e => { e.preventDefault(); setFire(false); });
-        
-        // Двойное нажатие для активации временного сдвига
-        let lastTap = 0;
-        fireBtn.addEventListener('touchend', e => {
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
-            if (tapLength < 300 && tapLength > 0) {
-                activateTimeShift();
-            }
-            lastTap = currentTime;
-        });
-
         window.addEventListener('blur', () => { setLeft(false); setRight(false); setFire(false); });
 
         document.addEventListener('keydown', e => {
@@ -1050,7 +677,6 @@
             if (e.code === 'ArrowLeft') setLeft(true);
             if (e.code === 'ArrowRight') setRight(true);
             if (e.code === 'Space') setFire(true);
-            if (e.code === 'KeyX') activateTimeShift();
         });
         document.addEventListener('keyup', e => {
             if (e.code === 'ArrowLeft') setLeft(false);
@@ -1063,8 +689,8 @@
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('controls').style.display = 'flex';
             document.getElementById('fireBtn').style.display = 'block';
-            gameRunning = true; score = 0; lives = 3; xdust = 0; xdustCollected = 0; bullets = []; enemies = []; particles = []; powerUps = []; timeAnomalies = [];
-            shieldActive = false; speedBoostEnd = 0; laserModeEnd = 0; megaShieldStage = 0; megaShieldEnd = 0; timeShiftEnd = 0;
+            gameRunning = true; score = 0; lives = 3; bullets = []; enemies = []; particles = []; powerUps = [];
+            shieldActive = false; speedBoostEnd = 0; laserModeEnd = 0; megaShieldStage = 0; megaShieldEnd = 0;
             player.x = canvas.width / 2 - 20; player.dx = 0; player.isDamaged = false;
             enemySpawnRate = 0.03; lastSpawnIncrease = Date.now(); bossActive = false; boss = null; bossTimer = Date.now();
             updateUI(); resizeCanvas(); createGameStars(); gameLoop();
@@ -1073,11 +699,10 @@
         function endGame() {
             gameRunning = false; cancelAnimationFrame(animationId);
             document.getElementById('finalScore').textContent = score;
-            document.getElementById('finalXdust').textContent = xdustCollected;
             document.getElementById('gameOver').style.display = 'block';
             document.getElementById('controls').style.display = 'none';
             document.getElementById('fireBtn').style.display = 'none';
-            if (tg) tg.showAlert(`Временной континуум нарушен! Счёт: ${score} | XDUST: ${xdustCollected}`);
+            if (tg) tg.showAlert(`Игра окончена! Счёт: ${score}`);
         }
 
         function restartGame() { startGame(); }
