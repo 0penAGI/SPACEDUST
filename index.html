@@ -456,26 +456,75 @@
             🚨 Сириус передает XDUST для усиления флота!
         </div>
 
-        <div id="upgradeShop" style="
-            position: absolute;
-            bottom: 100px;
+        <!-- Upgrade Shop Modal Button -->
+        <button id="openUpgradeModalBtn" style="
+            position: fixed;
+            bottom: 110px;
             left: 20px;
-            width: 320px;
-            background: rgba(5, 5, 50, 0.95);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #ff00ff;
-            box-shadow: 0 0 25px #ff00ff;
-            z-index: 20;
-            transition: all 0.3s ease;
+            z-index: 30;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            color: #fff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 0 15px #ff00ff;
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: box-shadow 0.2s;
+        " onclick="openUpgradeShopModal()">🛠️ Апгрейды</button>
+        <!-- Upgrade Shop Modal (Full Screen) -->
+        <div id="upgradeShopModal" style="
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 5, 40, 0.98);
+            z-index: 9999;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+            padding-top: 6vw;
+            padding-bottom: 6vw;
         ">
-            <h3 style="color: #ff00ff; text-align: center; margin-bottom: 10px; text-shadow: 0 0 10px #ff00ff;">
-                🛠️ Модернизации XDUST
-            </h3>
-            <div id="upgradesList"></div>
-            <p style="font-size: 12px; margin-top: 10px; color: #aaa;">
-                ⚡ Энергия: <span id="shopEnergy" class="resource-value">0</span>
-            </p>
+            <div style="
+                margin: 0 auto;
+                width: 96vw;
+                max-width: 400px;
+                background: rgba(5, 5, 50, 0.97);
+                padding: 28px 18px 18px 18px;
+                border-radius: 18px;
+                border: 2px solid #ff00ff;
+                box-shadow: 0 0 35px #ff00ff;
+                position: relative;
+                min-height: 270px;
+                color: #fff;
+            ">
+                <button onclick="closeUpgradeShopModal()" style="
+                    position: absolute;
+                    top: 12px; right: 12px;
+                    background: #ff00ff;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 34px; height: 34px;
+                    font-size: 20px;
+                    font-weight: bold;
+                    box-shadow: 0 0 10px #ff00ff;
+                    cursor: pointer;
+                    z-index: 2;
+                " aria-label="Закрыть">✕</button>
+                <h3 style="color: #ff00ff; text-align: center; margin-bottom: 14px; text-shadow: 0 0 12px #ff00ff;">
+                    🛠️ Модернизации XDUST
+                </h3>
+                <div id="upgradesListModal"></div>
+                <p style="font-size: 13px; margin-top: 14px; color: #aaa; text-align: center;">
+                    ⚡ Энергия: <span id="shopEnergyModal" class="resource-value">0</span>
+                </p>
+            </div>
         </div>
         
         <!-- УНИФИЦИРОВАННАЯ КНОПКА ВНИЗУ -->
@@ -562,10 +611,16 @@
             updateUI();
         }
 
-        // Отрисовка панели апгрейдов
+        // Отрисовка панели апгрейдов (старый блок для боковой панели - больше не используется)
         function renderUpgradeShop() {
-            const list = document.getElementById('upgradesList');
-            const shopEnergy = document.getElementById('shopEnergy');
+            // legacy, оставим вызов пустым, либо можно вызвать модальное окно
+            // Можно вызвать renderUpgradeShopModal() если нужно синхронизировать данные
+        }
+
+        // Новый: отрисовка апгрейдов внутри модального окна
+        function renderUpgradeShopModal() {
+            const list = document.getElementById('upgradesListModal');
+            const shopEnergy = document.getElementById('shopEnergyModal');
             if(!list || !shopEnergy) return;
             list.innerHTML = '';
             shopEnergy.textContent = Math.floor(currentEnergy);
@@ -577,20 +632,20 @@
                 const upgradeDiv = document.createElement('div');
                 upgradeDiv.className = 'upgrade-item';
                 upgradeDiv.style.border='1px solid rgba(255,0,255,0.4)';
-                upgradeDiv.style.padding='8px';
-                upgradeDiv.style.marginBottom='8px';
-                upgradeDiv.style.borderRadius='5px';
-                upgradeDiv.style.backgroundColor = isMaxLevel?'rgba(0,255,136,0.1)':'rgba(0,0,0,0.4)';
+                upgradeDiv.style.padding='10px 8px 8px 8px';
+                upgradeDiv.style.marginBottom='12px';
+                upgradeDiv.style.borderRadius='7px';
+                upgradeDiv.style.backgroundColor = isMaxLevel?'rgba(0,255,136,0.08)':'rgba(0,0,0,0.26)';
 
                 const levelIndicators = Array(data.maxLevel).fill(0).map((_,i)=>
-                    `<span style="display:inline-block;width:8px;height:8px;margin:0 1px;border-radius:50%;background-color:${i<currentLevel?'#ff00ff':'#333'};box-shadow:${i<currentLevel?'0 0 5px #ff00ff':'none'}"></span>`
+                    `<span style="display:inline-block;width:10px;height:10px;margin:0 2px;border-radius:50%;background-color:${i<currentLevel?'#ff00ff':'#333'};box-shadow:${i<currentLevel?'0 0 6px #ff00ff':'none'}"></span>`
                 ).join('');
 
                 if(isMaxLevel){
                     upgradeDiv.innerHTML = `
                         <div style="color:#00ff88;font-weight:bold;">${data.name} (МАКС)</div>
-                        <div style="font-size:10px;color:#00ff88;margin-bottom:5px;">${levelIndicators}</div>
-                        <div style="font-size:12px;color:#00ff88;">МАКСИМУМ.</div>
+                        <div style="font-size:11px;color:#00ff88;margin-bottom:5px;">${levelIndicators}</div>
+                        <div style="font-size:13px;color:#00ff88;">МАКСИМУМ.</div>
                     `;
                 } else {
                     const canAfford = currentEnergy>=nextCost;
@@ -598,15 +653,33 @@
                     const btnShadow = canAfford?'0 0 10px #ff00ff':'none';
                     upgradeDiv.innerHTML = `
                         <div style="color:#fff;font-weight:bold;">${data.name} (Ур. ${currentLevel})</div>
-                        <div style="font-size:10px;color:#ccc;margin-bottom:5px;">${levelIndicators}</div>
-                        <div style="font-size:12px;color:#aaa;">${data.description}</div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                        <div style="font-size:11px;color:#ccc;margin-bottom:5px;">${levelIndicators}</div>
+                        <div style="font-size:13px;color:#aaa;">${data.description}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
                             <span style="color:${canAfford?'#00ffff':'#ff3333'};font-weight:bold;">⚡ ${nextCost}</span>
-                            <button onclick="buyUpgrade('${key}')" style="background:${btnColor};color:#000;border:none;padding:5px 10px;cursor:${canAfford?'pointer':'not-allowed'};border-radius:3px;font-family:'Orbitron',monospace;font-weight:bold;box-shadow:${btnShadow};transition:all 0.2s;" ${canAfford?'':'disabled'}>КУПИТЬ</button>
+                            <button onclick="buyUpgrade('${key}'); setTimeout(renderUpgradeShopModal, 10);" style="background:${btnColor};color:#000;border:none;padding:6px 16px;cursor:${canAfford?'pointer':'not-allowed'};border-radius:3px;font-family:'Orbitron',monospace;font-weight:bold;box-shadow:${btnShadow};font-size:15px;transition:all 0.2s;" ${canAfford?'':'disabled'}>КУПИТЬ</button>
                         </div>
                     `;
                 }
                 list.appendChild(upgradeDiv);
+            }
+        }
+
+        // Открыть модальное окно апгрейдов
+        function openUpgradeShopModal() {
+            const modal = document.getElementById('upgradeShopModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                renderUpgradeShopModal();
+            }
+        }
+        // Закрыть модальное окно апгрейдов
+        function closeUpgradeShopModal() {
+            const modal = document.getElementById('upgradeShopModal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
             }
         }
 
@@ -624,16 +697,22 @@
                 const itemElement = document.querySelector(`#upgradesList .upgrade-item:nth-child(${Object.keys(UPGRADE_DATA).indexOf(key)+1})`);
                 if(itemElement){
                     itemElement.style.boxShadow='0 0 20px #00ff88';
-                    setTimeout(()=>{itemElement.style.boxShadow='none'; renderUpgradeShop();},300);
-                } else { renderUpgradeShop(); }
+                    setTimeout(()=>{itemElement.style.boxShadow='none'; renderUpgradeShopModal();},300);
+                } else { renderUpgradeShopModal(); }
 
                 if(tg) tg.showAlert(`✅ ${data.name} повышен до Ур. ${upgradeLevels[key]}!`);
             } else {
                 if(tg) tg.showAlert("🚫 Недостаточно энергии!");
-                const shopEl = document.getElementById('upgradeShop');
-                shopEl.style.transform='translateX(-5px)';
-                setTimeout(()=>{shopEl.style.transform='translateX(5px)';
-                    setTimeout(()=>{shopEl.style.transform='translateX(0)'},50);},50);
+                // Покачать модальное окно для эффекта ошибки
+                const modal = document.getElementById('upgradeShopModal');
+                if (modal) {
+                    const inner = modal.querySelector('div');
+                    if (inner) {
+                        inner.style.transform = 'translateX(-7px)';
+                        setTimeout(()=>{inner.style.transform='translateX(7px)';
+                            setTimeout(()=>{inner.style.transform='translateX(0)'},50);},50);
+                    }
+                }
             }
         }
 
@@ -863,7 +942,7 @@
             }
 
             // Отрисовать магазин апгрейдов
-            renderUpgradeShop();
+            // renderUpgradeShop(); // не требуется, теперь используется renderUpgradeShopModal
         }
 
         // Анимация потока ресурсов с Сириуса
