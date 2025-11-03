@@ -125,10 +125,11 @@
             font-size: 16px;
             font-weight: bold;
             position: absolute;
-            bottom: 20px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
             box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+            touch-action: manipulation;
         }
         
         #fireBtn.active {
@@ -863,22 +864,40 @@
             animationId = requestAnimationFrame(gameLoop);
         }
 
-        // Улучшенное управление касанием с предотвращением залипания
+        // Улучшенное управление касанием
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
         const fireBtn = document.getElementById('fireBtn');
         const leftZone = document.getElementById('leftZone');
         const rightZone = document.getElementById('rightZone');
 
-        let activeTouches = new Map(); // Для отслеживания касаний
+        let activeTouches = new Map();
+        let firing = false;
+        let fireInterval;
+        let fireTimeout; // Новый таймаут для предотвращения залипания
 
-        // Функции для обработки
         function handleTouchStart(e, action) {
             e.preventDefault();
             for (let touch of e.changedTouches) {
-                activeTouches.set(touch.identifier, action);
+                activeTouches.set(touch.identifier, {action, startX: touch.clientX, startY: touch.clientY});
             }
             action(true);
+        }
+
+        function handleTouchMove(e, action) {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                const touchData = activeTouches.get(touch.identifier);
+                if (touchData && touchData.action === action) {
+                    // Если палец ушёл за пределы кнопки (проверяем расстояние)
+                    const dx = Math.abs(touch.clientX - touchData.startX);
+                    const dy = Math.abs(touch.clientY - touchData.startY);
+                    if (dx > 50 || dy > 50) { // Arbitrary threshold для "ушёл далеко"
+                        activeTouches.delete(touch.identifier);
+                        action(false);
+                    }
+                }
+            }
         }
 
         function handleTouchEnd(e, action) {
@@ -886,8 +905,15 @@
             for (let touch of e.changedTouches) {
                 activeTouches.delete(touch.identifier);
             }
-            if (![...activeTouches.values()].includes(action)) {
-                action(false);
+            action(false);
+            resetIfNoTouches();
+        }
+
+        function resetIfNoTouches() {
+            if (activeTouches.size === 0) {
+                startLeft(false);
+                startRight(false);
+                startFire(false);
             }
         }
 
@@ -910,64 +936,76 @@
                 fireBtn.classList.toggle('active', active);
                 if (active && !firing) {
                     firing = true;
-                    shoot();
+                    shoot(); // Немедленный выстрел даже на короткий тап
                     fireInterval = setInterval(() => {
                         if (gameRunning && firing) shoot();
                     }, shootCooldown);
+                    // Таймаут на авто-сброс, если залипло (max 5 сек)
+                    clearTimeout(fireTimeout);
+                    fireTimeout = setTimeout(() => {
+                        startFire(false);
+                    }, 5000);
                 } else if (!active) {
                     firing = false;
                     clearInterval(fireInterval);
+                    clearTimeout(fireTimeout);
                 }
             }
         }
 
-        // Обработчики для кнопок и зон
+        // Обработчики
         leftBtn.addEventListener('touchstart', e => handleTouchStart(e, startLeft));
+        leftBtn.addEventListener('touchmove', e => handleTouchMove(e, startLeft));
         leftBtn.addEventListener('touchend', e => handleTouchEnd(e, startLeft));
         leftBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startLeft));
 
         rightBtn.addEventListener('touchstart', e => handleTouchStart(e, startRight));
+        rightBtn.addEventListener('touchmove', e => handleTouchMove(e, startRight));
         rightBtn.addEventListener('touchend', e => handleTouchEnd(e, startRight));
         rightBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startRight));
 
         leftZone.addEventListener('touchstart', e => handleTouchStart(e, startLeft));
+        leftZone.addEventListener('touchmove', e => handleTouchMove(e, startLeft));
         leftZone.addEventListener('touchend', e => handleTouchEnd(e, startLeft));
         leftZone.addEventListener('touchcancel', e => handleTouchEnd(e, startLeft));
 
         rightZone.addEventListener('touchstart', e => handleTouchStart(e, startRight));
+        rightZone.addEventListener('touchmove', e => handleTouchMove(e, startRight));
         rightZone.addEventListener('touchend', e => handleTouchEnd(e, startRight));
         rightZone.addEventListener('touchcancel', e => handleTouchEnd(e, startRight));
 
         fireBtn.addEventListener('touchstart', e => handleTouchStart(e, startFire));
+        fireBtn.addEventListener('touchmove', e => handleTouchMove(e, startFire));
         fireBtn.addEventListener('touchend', e => handleTouchEnd(e, startFire));
         fireBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startFire));
 
-        // Глобальный touchend/touchcancel для сброса
-        document.addEventListener('touchend', () => {
-            if (activeTouches.size === 0) {
-                startLeft(false);
-                startRight(false);
-                startFire(false);
-            }
-        });
-        document.addEventListener('touchcancel', () => {
-            if (activeTouches.size === 0) {
-                startLeft(false);
-                startRight(false);
-                startFire(false);
+        // Глобальный сброс
+        document.addEventListener('touchend', resetIfNoTouches);
+        document.addEventListener('touchcancel', resetIfNoTouches);
+        document.addEventListener('touchmove', (e) => {
+            if (activeTouches.size > 0) {
+                // Проверяем все активные тачи на move
+                for (let [id, data] of activeTouches) {
+                    const touch = Array.from(e.touches).find(t => t.identifier === id);
+                    if (touch) {
+                        const dx = Math.abs(touch.clientX - data.startX);
+                        const dy = Math.abs(touch.clientY - data.startY);
+                        if (dx > 50 || dy > 50) {
+                            activeTouches.delete(id);
+                            data.action(false);
+                        }
+                    }
+                }
+                resetIfNoTouches();
             }
         });
 
-        // Обработчики для предотвращения залипания при потере фокуса
         window.addEventListener('blur', () => {
             startLeft(false);
             startRight(false);
             startFire(false);
             activeTouches.clear();
         });
-
-        let firing = false;
-        let fireInterval;
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
