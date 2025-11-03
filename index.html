@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Space Shooter</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(to bottom, #000000, #0a0a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        canvas {
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            background: #000000;
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #00ffff;
+            font-size: 16px;
+            text-shadow: 0 0 10px #00ffff;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 15;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3);
+            border: 3px solid #00ffff;
+            color: #00ffff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            touch-action: none;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        .control-btn:active {
+            background: rgba(0, 255, 255, 0.6);
+            transform: scale(0.95);
+        }
+        
+        #fireBtn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 0, 0.3);
+            border-color: #ffff00;
+            font-size: 28px;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        #fireBtn:active {
+            background: rgba(255, 255, 0, 0.6);
+        }
+        
+        #gameOver, #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ffff;
+            text-align: center;
+            z-index: 20;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        #gameOver {
+            display: none;
+            color: #ff0000;
+        }
+        
+        #startScreen h1 {
+            font-size: 36px;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        #gameOver h1 {
+            font-size: 32px;
+            text-shadow: 0 0 20px #ff0000;
+            margin-bottom: 10px;
+        }
+        
+        #startScreen p, #gameOver p {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 15px 40px;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+            touch-action: manipulation;
+        }
+        
+        .btn:active {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+        
+        #leftZone, #rightZone {
+            position: absolute;
+            bottom: 0;
+            width: 35%;
+            height: 150px;
+            z-index: 14;
+            opacity: 0;
+        }
+        
+        #leftZone {
+            left: 0;
+        }
+        
+        #rightZone {
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="ui">
+            <div>Счёт: <span id="score">0</span></div>
+            <div>❤️ <span id="lives">3</span></div>
+        </div>
+        
+        <div id="startScreen">
+            <h1>🚀 SPACE SHOOTER</h1>
+            <p>Уничтожай врагов!</p>
+            <p>Используй кнопки управления внизу экрана</p>
+            <button class="btn" ontouchstart="startGame()" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+        </div>
+        
+        <div id="gameOver">
+            <h1>ИГРА ОКОНЧЕНА</h1>
+            <p>Ваш счёт: <span id="finalScore">0</span></p>
+            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">ЗАНОВО</button>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="controls">
+            <div class="control-btn" id="leftBtn">◀</div>
+            <div class="control-btn" id="rightBtn">▶</div>
+        </div>
+        
+        <div id="fireBtn" class="control-btn">🔥</div>
+        
+        <div id="leftZone"></div>
+        <div id="rightZone"></div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.ready();
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Адаптивный размер canvas
+        function resizeCanvas() {
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 20;
+            const aspectRatio = 3 / 4;
+            
+            if (maxWidth / maxHeight > aspectRatio) {
+                canvas.height = maxHeight;
+                canvas.width = maxHeight * aspectRatio;
+            } else {
+                canvas.width = maxWidth;
+                canvas.height = maxWidth / aspectRatio;
+            }
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let animationId;
+        let lastShot = 0;
+        const shootCooldown = 250;
+
+        const player = {
+            x: canvas.width / 2 - 20,
+            y: canvas.height - 60,
+            width: 40,
+            height: 40,
+            speed: 5,
+            dx: 0
+        };
+
+        let bullets = [];
+        let enemies = [];
+        let stars = [];
+        let particles = [];
+
+        // Звёзды
+        function createStars() {
+            stars = [];
+            for (let i = 0; i < 50; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+        createStars();
+
+        // Частицы взрыва
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 30,
+                    color: ['#ff0000', '#ff8800', '#ffff00'][Math.floor(Math.random() * 3)]
+                });
+            }
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            const scale = canvas.width / 600;
+            ctx.fillStyle = '#00ffff';
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x, player.y + player.height);
+            ctx.lineTo(player.x + player.width / 2, player.y + player.height - 10);
+            ctx.lineTo(player.x + player.width, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(player.x + 8, player.y + player.height - 8, 8, 8);
+            ctx.fillRect(player.x + 24, player.y + player.height - 8, 8, 8);
+            ctx.restore();
+        }
+
+        function drawBullet(bullet) {
+            ctx.fillStyle = '#ffff00';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffff00';
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawEnemy(enemy) {
+            ctx.fillStyle = '#ff0000';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ff0000';
+            ctx.beginPath();
+            ctx.moveTo(enemy.x + enemy.width / 2, enemy.y + enemy.height);
+            ctx.lineTo(enemy.x, enemy.y);
+            ctx.lineTo(enemy.x + enemy.width / 2, enemy.y + 12);
+            ctx.lineTo(enemy.x + enemy.width, enemy.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawStars() {
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                ctx.globalAlpha = 0.5 + Math.random() * 0.5;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawParticles() {
+            particles.forEach((p, i) => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function updateStars() {
+            stars.forEach(star => {
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        function updateParticles() {
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            });
+        }
+
+        function movePlayer() {
+            player.x += player.dx;
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) {
+                player.x = canvas.width - player.width;
+            }
+        }
+
+        function shoot() {
+            const now = Date.now();
+            if (now - lastShot > shootCooldown) {
+                bullets.push({
+                    x: player.x + player.width / 2 - 2,
+                    y: player.y,
+                    width: 4,
+                    height: 12,
+                    speed: 8
+                });
+                lastShot = now;
+            }
+        }
+
+        function updateBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.y -= bullet.speed;
+                if (bullet.y < 0) bullets.splice(index, 1);
+            });
+        }
+
+        function spawnEnemy() {
+            if (Math.random() < 0.015) {
+                const size = 30 + Math.random() * 10;
+                enemies.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    width: size,
+                    height: size,
+                    speed: 1.5 + Math.random() * 1.5
+                });
+            }
+        }
+
+        function updateEnemies() {
+            enemies.forEach((enemy, index) => {
+                enemy.y += enemy.speed;
+                if (enemy.y > canvas.height) {
+                    enemies.splice(index, 1);
+                    lives--;
+                    updateUI();
+                    if (lives <= 0) endGame();
+                }
+            });
+        }
+
+        function checkCollisions() {
+            bullets.forEach((bullet, bIndex) => {
+                enemies.forEach((enemy, eIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        bullets.splice(bIndex, 1);
+                        enemies.splice(eIndex, 1);
+                        createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                        score += 10;
+                        updateUI();
+                    }
+                });
+            });
+
+            enemies.forEach((enemy, index) => {
+                if (player.x < enemy.x + enemy.width &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height &&
+                    player.y + player.height > enemy.y) {
+                    enemies.splice(index, 1);
+                    createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                    lives--;
+                    updateUI();
+                    if (lives <= 0) endGame();
+                }
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawStars();
+            updateStars();
+            
+            drawParticles();
+            updateParticles();
+
+            drawPlayer();
+            movePlayer();
+
+            bullets.forEach(bullet => drawBullet(bullet));
+            updateBullets();
+
+            enemies.forEach(enemy => drawEnemy(enemy));
+            updateEnemies();
+            spawnEnemy();
+
+            checkCollisions();
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // Управление касанием
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const fireBtn = document.getElementById('fireBtn');
+        const leftZone = document.getElementById('leftZone');
+        const rightZone = document.getElementById('rightZone');
+
+        leftBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = -player.speed;
+        });
+
+        leftBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = 0;
+        });
+
+        rightBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = player.speed;
+        });
+
+        rightBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = 0;
+        });
+
+        leftZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = -player.speed;
+        });
+
+        leftZone.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = 0;
+        });
+
+        rightZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = player.speed;
+        });
+
+        rightZone.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameRunning) player.dx = 0;
+        });
+
+        let firing = false;
+        let fireInterval;
+
+        fireBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning && !firing) {
+                firing = true;
+                shoot();
+                fireInterval = setInterval(() => {
+                    if (gameRunning) shoot();
+                }, shootCooldown);
+            }
+        });
+
+        fireBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            firing = false;
+            clearInterval(fireInterval);
+        });
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('controls').style.display = 'flex';
+            document.getElementById('fireBtn').style.display = 'flex';
+            gameRunning = true;
+            score = 0;
+            lives = 3;
+            bullets = [];
+            enemies = [];
+            particles = [];
+            player.x = canvas.width / 2 - 20;
+            player.dx = 0;
+            updateUI();
+            gameLoop();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('fireBtn').style.display = 'none';
+            
+            if (tg) {
+                tg.showAlert(`Игра окончена! Ваш счёт: ${score}`);
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        // Предотвращение скролла
+        document.body.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
