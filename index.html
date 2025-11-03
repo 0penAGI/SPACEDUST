@@ -294,16 +294,16 @@
         /* УНИФИЦИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ */
         #bottomPanel {
             position: fixed;
-            bottom: 0;
+            bottom: env(safe-area-inset-bottom, 0);
             left: 0;
             width: 100%;
-            padding: 10px 20px 20px 20px;
+            padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0)) 20px;
             box-sizing: border-box;
             z-index: 15;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            pointer-events: none;
+            pointer-events: auto;
             background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
         }
 
@@ -470,6 +470,18 @@
         let currentCrystals = 300;
         let miningInterval; // Переменная для хранения ID интервала майнинга
 
+        // === ПРОГРЕСС АПГРЕЙДОВ: СОХРАНЕНИЕ/ЗАГРУЗКА ===
+        function saveUpgradeData() {
+            // Пример: сохраняем ресурсы и апгрейды (можно расширять при необходимости)
+            const data = {
+                currentEnergy,
+                currentMetals,
+                currentCrystals,
+                // Можно добавить: upgrades: upgrades (если есть объект upgrades)
+            };
+            localStorage.setItem('xdgame_upgrade_data', JSON.stringify(data));
+        }
+
         function switchToGalaxy() {
             document.getElementById('gameContainer').style.display = 'none';
             document.getElementById('galaxyContainer').style.display = 'flex';
@@ -508,7 +520,21 @@
         }
         
         // === ГАЛАКТИЧЕСКАЯ КАРТА (Обновление) ===
+        function loadUpgradeData() {
+            try {
+                const data = JSON.parse(localStorage.getItem('xdgame_upgrade_data'));
+                if (data) {
+                    if (typeof data.currentEnergy === 'number') currentEnergy = data.currentEnergy;
+                    if (typeof data.currentMetals === 'number') currentMetals = data.currentMetals;
+                    if (typeof data.currentCrystals === 'number') currentCrystals = data.currentCrystals;
+                    // Можно добавить: if (data.upgrades) upgrades = data.upgrades;
+                }
+            } catch (e) {}
+        }
+
         function initGalaxyMap() {
+            // Загрузка прогресса апгрейдов/ресурсов
+            loadUpgradeData();
             // Обновляем только ресурсы в панели, не пересоздаём всю разметку и не удаляем bottomPanel-galaxy!
             // Обновить ресурсы
             const energyElem = document.getElementById('energy');
@@ -708,6 +734,9 @@
                 crystalsElem.textContent = Math.floor(currentCrystals);
                 scoreElem.textContent = score;
             }
+
+            // Сохраняем прогресс при изменении ресурсов
+            saveUpgradeData();
 
             // Эффект получения ресурсов
             document.body.style.animation = 'glow 0.5s';
@@ -1469,3 +1498,9 @@
     </script>
 </body>
 </html>
+
+        // === ПРИМЕР: ПОКУПКА АПГРЕЙДА (добавьте этот вызов в вашу функцию покупки) ===
+        // function buyUpgrade(upgradeId) {
+        //     // ... логика покупки ...
+        //     saveUpgradeData(); // Сохраняем после успешной покупки
+        // }
