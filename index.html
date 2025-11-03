@@ -1719,14 +1719,23 @@
             if (!bossActive || !boss) return;
             const now = Date.now();
             if (now - boss.lastShot > boss.shootCooldown) {
-                bullets.push({
-                    x: boss.x + boss.width / 2 - 4,
-                    y: boss.y + boss.height,
-                    width: 8,
-                    height: 12,
-                    speed: 5,
-                    isEnemy: true
+                const centerX = boss.x + boss.width / 2;
+                const centerY = boss.y + boss.height;
+
+                // Веер из 9 пуль, углы от -60 до +60 градусов
+                const angles = [-Math.PI/3, -Math.PI/4, -Math.PI/6, -Math.PI/12, 0, Math.PI/12, Math.PI/6, Math.PI/4, Math.PI/3];
+                angles.forEach(angle => {
+                    bullets.push({
+                        x: centerX - 4,
+                        y: centerY,
+                        width: 8,
+                        height: 12,
+                        speed: 5,
+                        angle: angle,
+                        isEnemy: true
+                    });
                 });
+
                 boss.lastShot = now;
             }
         }
@@ -1784,8 +1793,13 @@
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
                 if (bullet.isEnemy) {
-                    bullet.y += bullet.speed * timeDilationFactor;
-                    if (bullet.y > canvas.height) bullets.splice(i, 1);
+                    if (bullet.angle !== undefined) {
+                        bullet.x += Math.sin(bullet.angle) * bullet.speed * timeDilationFactor;
+                        bullet.y += Math.cos(bullet.angle) * bullet.speed * timeDilationFactor;
+                    } else {
+                        bullet.y += bullet.speed * timeDilationFactor;
+                    }
+                    if (bullet.y > canvas.height || bullet.x < 0 || bullet.x > canvas.width) bullets.splice(i, 1);
                     else if (player.x < bullet.x + bullet.width && player.x + player.width > bullet.x &&
                              player.y < bullet.y + bullet.height && player.y + player.height > bullet.y) {
                         bullets.splice(i, 1);
