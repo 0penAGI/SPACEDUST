@@ -1208,6 +1208,18 @@
                     type: 'normal'
                 });
             }
+            // Кодовый Дрон (Code Drone) — 1% шанс появления
+            if (Math.random() < 0.01) { // 1% шанс на появление Кодового Дрона
+                const size = 30;
+                enemies.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    width: size,
+                    height: size,
+                    speed: 3 + Math.random(),
+                    type: 'code-drone'
+                });
+            }
             if (!bossActive && Date.now() - bossTimer > bossInterval) {
                 bossActive = true;
                 boss = {
@@ -1329,6 +1341,44 @@
             document.getElementById('lives').textContent = lives;
         }
 
+        // Отрисовка Кодового Дрона
+        function drawCodeDrone(enemy) {
+            ctx.save();
+            // Тело дрона
+            const grad = ctx.createLinearGradient(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
+            grad.addColorStop(0, '#00ffff');
+            grad.addColorStop(1, '#ff00ff');
+            ctx.fillStyle = grad;
+            ctx.shadowBlur = 16;
+            ctx.shadowColor = '#00ffff';
+            ctx.beginPath();
+            ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, 0, Math.PI*2);
+            ctx.fill();
+            // "Кодовые" линии
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.6;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                const angle = (Math.PI * 2 / 5) * i + (Date.now()/500 % Math.PI*2);
+                ctx.lineTo(
+                    enemy.x + enemy.width/2 + Math.cos(angle) * enemy.width/2,
+                    enemy.y + enemy.height/2 + Math.sin(angle) * enemy.height/2
+                );
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            // Центральная "мигающая" точка
+            ctx.beginPath();
+            ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 4 + 2*Math.sin(Date.now()/150), 0, Math.PI*2);
+            ctx.fillStyle = '#fff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#fff';
+            ctx.fill();
+            ctx.restore();
+        }
+
         function gameLoop() {
             if (!gameRunning) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1337,7 +1387,10 @@
             powerUps.forEach(drawPowerUp); updatePowerUps();
             drawPlayer(); movePlayer();
             bullets.forEach(drawBullet); updateBullets();
-            enemies.forEach(drawEnemy); updateEnemies(); spawnEnemy();
+            enemies.forEach(enemy => {
+                if (enemy.type === 'code-drone') drawCodeDrone(enemy);
+                else drawEnemy(enemy);
+            }); updateEnemies(); spawnEnemy();
             if (bossActive && boss) drawBoss(boss);
             if (megaShieldStage > 0 && Date.now() > megaShieldEnd) megaShieldStage = 0;
             if (player.isDamaged && Date.now() - player.damageTime > 1000) player.isDamaged = false;
