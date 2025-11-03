@@ -509,23 +509,29 @@
         
         // === ГАЛАКТИЧЕСКАЯ КАРТА (Обновление) ===
         function initGalaxyMap() {
+            // Обновляем только ресурсы в панели, не пересоздаём всю разметку и не удаляем bottomPanel-galaxy!
+            // Обновить ресурсы
+            const energyElem = document.getElementById('energy');
+            const metalsElem = document.getElementById('metals');
+            const crystalsElem = document.getElementById('crystals');
+            const scoreElem = document.getElementById('galaxyScore');
+            if (energyElem) energyElem.textContent = Math.floor(currentEnergy);
+            if (metalsElem) metalsElem.textContent = Math.floor(currentMetals);
+            if (crystalsElem) crystalsElem.textContent = Math.floor(currentCrystals);
+            if (scoreElem) scoreElem.textContent = score;
+
+            // Удалить старые сектора (div.sector)
             const galaxyContainer = document.getElementById('galaxyContainer');
-            galaxyContainer.innerHTML = `
-                <div class="sirius-dust">✨ XDUST С СИРИУСА! ✨</div>
-                <div class="resources-panel">
-                    <h3>Ресурсы XDUST</h3>
-                    <div>⚡ Энергия: <span id="energy">${currentEnergy}</span></div>
-                    <div>🪐 Металлы: <span id="metals">${currentMetals}</span></div>
-                    <div>💎 Кристаллы: <span id="crystals">${currentCrystals}</span></div>
-                    <div>🚀 Очки: <span id="galaxyScore">${score}</span></div>
-                </div>
-                <div class="mission-alert">
-                    🚨 Сириус передает XDUST для усиления флота!
-                </div>
-                <div id="controls-bottom">
-                    <button id="shooterBtn" class="mode-btn" onclick="switchToShooter()">🎮 Шутер</button>
-                </div>
-            `;
+            // Удалить только элементы с классом 'sector'
+            Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
+            // Также удалить старые звезды, чтобы не плодить их
+            Array.from(galaxyContainer.querySelectorAll('div'))
+                .forEach(el => {
+                    // Удаляем "звезды" без класса и без id, которые были добавлены createGalaxyStars
+                    if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
+                        el.remove();
+                    }
+                });
 
             // Обновленный массив секторов, включая новую миссию $XDUST-9001
             const sectors = [
@@ -620,17 +626,21 @@
                 galaxyContainer.appendChild(sectorElement);
             });
 
-            // Создаем звездный фон
-            createGalaxyStars();
+            // Создаем звездный фон (но только если нет звезд)
+            if (!galaxyContainer.querySelector('.galaxy-star')) {
+                createGalaxyStars();
+            }
 
             // Автоматическая передача ресурсов с Сириуса (кроме новой миссии)
-            setInterval(() => {
-                const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.type !== "mission");
-                const randomSector = filtered[Math.floor(Math.random() * filtered.length)];
-                if (randomSector) {
-                    createResourceStream(randomSector);
-                }
-            }, 5000);
+            if (!galaxyContainer._xdustAutoTransfer) {
+                galaxyContainer._xdustAutoTransfer = setInterval(() => {
+                    const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.type !== "mission");
+                    const randomSector = filtered[Math.floor(Math.random() * filtered.length)];
+                    if (randomSector) {
+                        createResourceStream(randomSector);
+                    }
+                }, 5000);
+            }
         }
 
         // Анимация потока ресурсов с Сириуса
