@@ -130,6 +130,8 @@
             transform: translateX(-50%);
             box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
             touch-action: manipulation;
+            text-align: center;
+            line-height: 1.2; /* Улучшение центровки текста */
         }
         
         #fireBtn.active {
@@ -431,6 +433,8 @@
         let stars = [];
         let particles = [];
         let powerUps = [];
+        let enemySpawnRate = 0.03; // Начальный шанс спавна врагов
+        let lastSpawnIncrease = Date.now();
 
         // Переменные для эффектов бонусов
         let shieldActive = false;
@@ -706,7 +710,8 @@
         }
 
         function updateParticles() {
-            particles.forEach((p, i) => {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
                 p.x += p.vx;
                 p.y += p.vy;
                 p.vx *= 0.95;
@@ -716,11 +721,12 @@
                 if (p.life <= 0 || p.size <= 0.1) {
                     particles.splice(i, 1);
                 }
-            });
+            }
         }
 
         function updatePowerUps() {
-            powerUps.forEach((powerUp, index) => {
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const powerUp = powerUps[i];
                 powerUp.y += powerUp.speed;
                 
                 // Проверка столкновения с игроком
@@ -729,16 +735,17 @@
                     player.y < powerUp.y + powerUp.height &&
                     player.y + player.height > powerUp.y) {
                     applyPowerUp(powerUp.type);
-                    powerUps.splice(index, 1);
+                    powerUps.splice(i, 1);
                     createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff', 20);
                     score += 50;
                     updateUI();
+                    continue;
                 }
                 
                 if (powerUp.y > canvas.height) {
-                    powerUps.splice(index, 1);
+                    powerUps.splice(i, 1);
                 }
-            });
+            }
         }
 
         function movePlayer() {
@@ -766,14 +773,19 @@
         }
 
         function updateBullets() {
-            bullets.forEach((bullet, index) => {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
                 bullet.y -= bullet.speed;
-                if (bullet.y < 0) bullets.splice(index, 1);
-            });
+                if (bullet.y < 0) bullets.splice(i, 1);
+            }
         }
 
         function spawnEnemy() {
-            if (Math.random() < 0.03) { // Увеличил шанс появления врагов
+            if (Date.now() - lastSpawnIncrease > 15000) { // Увеличиваем сложность каждые 15 сек
+                enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.1);
+                lastSpawnIncrease = Date.now();
+            }
+            if (Math.random() < enemySpawnRate) {
                 const size = 30 + Math.random() * 10;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
@@ -786,40 +798,49 @@
         }
 
         function updateEnemies() {
-            enemies.forEach((enemy, index) => {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
                 enemy.y += enemy.speed;
                 if (enemy.y > canvas.height) {
-                    enemies.splice(index, 1);
+                    enemies.splice(i, 1);
                     lives--;
                     updateUI();
                     if (lives <= 0) endGame();
                 }
-            });
+            }
         }
 
         function checkCollisions() {
-            bullets.forEach((bullet, bIndex) => {
-                enemies.forEach((enemy, eIndex) => {
+            const bulletsToRemove = [];
+            const enemiesToRemove = [];
+            const powerUpsToCreate = [];
+
+            for (let b = 0; b < bullets.length; b++) {
+                const bullet = bullets[b];
+                for (let e = 0; e < enemies.length; e++) {
+                    const enemy = enemies[e];
                     if (bullet.x < enemy.x + enemy.width &&
                         bullet.x + bullet.width > enemy.x &&
                         bullet.y < enemy.y + enemy.height &&
                         bullet.y + bullet.height > enemy.y) {
-                        bullets.splice(bIndex, 1);
-                        enemies.splice(eIndex, 1);
+                        bulletsToRemove.push(b);
+                        enemiesToRemove.push(e);
                         createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
-                        createPowerUp(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                        powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
                         score += 10;
                         updateUI();
+                        break; // Пуля уничтожается после первого попадания
                     }
-                });
-            });
+                }
+            }
 
-            enemies.forEach((enemy, index) => {
+            for (let e = 0; e < enemies.length; e++) {
+                const enemy = enemies[e];
                 if (player.x < enemy.x + enemy.width &&
                     player.x + player.width > enemy.x &&
                     player.y < enemy.y + enemy.height &&
                     player.y + player.height > enemy.y) {
-                    enemies.splice(index, 1);
+                    enemiesToRemove.push(e);
                     createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
                     if (!shieldActive) {
                         lives--;
@@ -827,7 +848,13 @@
                     updateUI();
                     if (lives <= 0) endGame();
                 }
-            });
+            }
+
+            // Удаляем по убывающим индексам, чтобы избежать сдвигов
+            bulletsToRemove.sort((a, b) => b - a).forEach(idx => bullets.splice(idx, 1));
+            enemiesToRemove.sort((a, b) => b - a).forEach(idx => enemies.splice(idx, 1));
+
+            powerUpsToCreate.forEach(pos => createPowerUp(pos.x, pos.y));
         }
 
         function updateUI() {
@@ -871,140 +898,70 @@
         const leftZone = document.getElementById('leftZone');
         const rightZone = document.getElementById('rightZone');
 
-        let activeTouches = new Map();
-        let firing = false;
+        let isLeftPressed = false;
+        let isRightPressed = false;
+        let isFiring = false;
         let fireInterval;
-        let fireTimeout; // Новый таймаут для предотвращения залипания
+        let fireTimeout;
 
-        function handleTouchStart(e, action) {
-            e.preventDefault();
-            for (let touch of e.changedTouches) {
-                activeTouches.set(touch.identifier, {action, startX: touch.clientX, startY: touch.clientY});
-            }
-            action(true);
+        function updateDx() {
+            const currentSpeed = Date.now() < speedBoostEnd ? player.speed * 1.5 : player.speed;
+            player.dx = (isRightPressed ? currentSpeed : 0) - (isLeftPressed ? currentSpeed : 0);
         }
 
-        function handleTouchMove(e, action) {
-            e.preventDefault();
-            for (let touch of e.changedTouches) {
-                const touchData = activeTouches.get(touch.identifier);
-                if (touchData && touchData.action === action) {
-                    // Если палец ушёл за пределы кнопки (проверяем расстояние)
-                    const dx = Math.abs(touch.clientX - touchData.startX);
-                    const dy = Math.abs(touch.clientY - touchData.startY);
-                    if (dx > 50 || dy > 50) { // Arbitrary threshold для "ушёл далеко"
-                        activeTouches.delete(touch.identifier);
-                        action(false);
-                    }
-                }
-            }
+        function setLeft(active) {
+            isLeftPressed = active;
+            leftBtn.classList.toggle('active', active);
+            updateDx();
         }
 
-        function handleTouchEnd(e, action) {
-            e.preventDefault();
-            for (let touch of e.changedTouches) {
-                activeTouches.delete(touch.identifier);
-            }
-            action(false);
-            resetIfNoTouches();
+        function setRight(active) {
+            isRightPressed = active;
+            rightBtn.classList.toggle('active', active);
+            updateDx();
         }
 
-        function resetIfNoTouches() {
-            if (activeTouches.size === 0) {
-                startLeft(false);
-                startRight(false);
-                startFire(false);
+        function setFire(active) {
+            fireBtn.classList.toggle('active', active);
+            if (active && !isFiring) {
+                isFiring = true;
+                shoot();
+                fireInterval = setInterval(() => {
+                    if (gameRunning && isFiring) shoot();
+                }, shootCooldown);
+                clearTimeout(fireTimeout);
+                fireTimeout = setTimeout(() => {
+                    setFire(false);
+                }, 5000);
+            } else if (!active) {
+                isFiring = false;
+                clearInterval(fireInterval);
+                clearTimeout(fireTimeout);
             }
         }
 
-        function startLeft(active) {
-            if (gameRunning) {
-                player.dx = active ? -player.speed : 0;
-                leftBtn.classList.toggle('active', active);
-            }
-        }
-
-        function startRight(active) {
-            if (gameRunning) {
-                player.dx = active ? player.speed : 0;
-                rightBtn.classList.toggle('active', active);
-            }
-        }
-
-        function startFire(active) {
-            if (gameRunning) {
-                fireBtn.classList.toggle('active', active);
-                if (active && !firing) {
-                    firing = true;
-                    shoot(); // Немедленный выстрел даже на короткий тап
-                    fireInterval = setInterval(() => {
-                        if (gameRunning && firing) shoot();
-                    }, shootCooldown);
-                    // Таймаут на авто-сброс, если залипло (max 5 сек)
-                    clearTimeout(fireTimeout);
-                    fireTimeout = setTimeout(() => {
-                        startFire(false);
-                    }, 5000);
-                } else if (!active) {
-                    firing = false;
-                    clearInterval(fireInterval);
-                    clearTimeout(fireTimeout);
-                }
-            }
-        }
-
-        // Обработчики
-        leftBtn.addEventListener('touchstart', e => handleTouchStart(e, startLeft));
-        leftBtn.addEventListener('touchmove', e => handleTouchMove(e, startLeft));
-        leftBtn.addEventListener('touchend', e => handleTouchEnd(e, startLeft));
-        leftBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startLeft));
-
-        rightBtn.addEventListener('touchstart', e => handleTouchStart(e, startRight));
-        rightBtn.addEventListener('touchmove', e => handleTouchMove(e, startRight));
-        rightBtn.addEventListener('touchend', e => handleTouchEnd(e, startRight));
-        rightBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startRight));
-
-        leftZone.addEventListener('touchstart', e => handleTouchStart(e, startLeft));
-        leftZone.addEventListener('touchmove', e => handleTouchMove(e, startLeft));
-        leftZone.addEventListener('touchend', e => handleTouchEnd(e, startLeft));
-        leftZone.addEventListener('touchcancel', e => handleTouchEnd(e, startLeft));
-
-        rightZone.addEventListener('touchstart', e => handleTouchStart(e, startRight));
-        rightZone.addEventListener('touchmove', e => handleTouchMove(e, startRight));
-        rightZone.addEventListener('touchend', e => handleTouchEnd(e, startRight));
-        rightZone.addEventListener('touchcancel', e => handleTouchEnd(e, startRight));
-
-        fireBtn.addEventListener('touchstart', e => handleTouchStart(e, startFire));
-        fireBtn.addEventListener('touchmove', e => handleTouchMove(e, startFire));
-        fireBtn.addEventListener('touchend', e => handleTouchEnd(e, startFire));
-        fireBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startFire));
-
-        // Глобальный сброс
-        document.addEventListener('touchend', resetIfNoTouches);
-        document.addEventListener('touchcancel', resetIfNoTouches);
-        document.addEventListener('touchmove', (e) => {
-            if (activeTouches.size > 0) {
-                // Проверяем все активные тачи на move
-                for (let [id, data] of activeTouches) {
-                    const touch = Array.from(e.touches).find(t => t.identifier === id);
-                    if (touch) {
-                        const dx = Math.abs(touch.clientX - data.startX);
-                        const dy = Math.abs(touch.clientY - data.startY);
-                        if (dx > 50 || dy > 50) {
-                            activeTouches.delete(id);
-                            data.action(false);
-                        }
-                    }
-                }
-                resetIfNoTouches();
-            }
+        // Обработчики для кнопок и зон
+        [leftBtn, leftZone].forEach(el => {
+            el.addEventListener('touchstart', e => { e.preventDefault(); setLeft(true); });
+            el.addEventListener('touchend', e => { e.preventDefault(); setLeft(false); });
+            el.addEventListener('touchcancel', e => { e.preventDefault(); setLeft(false); });
         });
 
+        [rightBtn, rightZone].forEach(el => {
+            el.addEventListener('touchstart', e => { e.preventDefault(); setRight(true); });
+            el.addEventListener('touchend', e => { e.preventDefault(); setRight(false); });
+            el.addEventListener('touchcancel', e => { e.preventDefault(); setRight(false); });
+        });
+
+        fireBtn.addEventListener('touchstart', e => { e.preventDefault(); setFire(true); });
+        fireBtn.addEventListener('touchend', e => { e.preventDefault(); setFire(false); });
+        fireBtn.addEventListener('touchcancel', e => { e.preventDefault(); setFire(false); });
+
+        // Глобальный сброс на blur
         window.addEventListener('blur', () => {
-            startLeft(false);
-            startRight(false);
-            startFire(false);
-            activeTouches.clear();
+            setLeft(false);
+            setRight(false);
+            setFire(false);
         });
 
         function startGame() {
@@ -1024,6 +981,8 @@
             laserModeEnd = 0;
             player.x = canvas.width / 2 - 20;
             player.dx = 0;
+            enemySpawnRate = 0.03;
+            lastSpawnIncrease = Date.now();
             updateUI();
             gameLoop();
         }
