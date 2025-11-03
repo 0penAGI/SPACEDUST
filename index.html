@@ -583,21 +583,57 @@
 
         // === КОСМИЧЕСКИЙ ШУТЕР ===
         // === ЗВУКИ: ПУЛ ДЛЯ БЕЗЛАГОВОЙ ИГРЫ ===
-        const shootSounds = [new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=='), new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=='), new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==')];
+        // Используем реальные файлы из вашего репозитория
+        const shootSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.m4a')
+        ];
+        
+        const explosionSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.m4a')
+        ];
+        
+        const powerupSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.m4a')
+        ];
+
         let shootIndex = 0;
+        let explosionIndex = 0;
+        let powerupIndex = 0;
+
         function playShoot() {
             const s = shootSounds[shootIndex];
             s.currentTime = 0;
             s.play().catch(() => {});
-            shootIndex = (shootIndex + 1) % 3;
+            shootIndex = (shootIndex + 1) % shootSounds.length;
         }
-        const explosionSound = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
-        const powerupSound = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
 
-        // Предзагрузка
-        shootSounds.forEach(s => s.load());
-        explosionSound.load();
-        powerupSound.load();
+        function playExplosion() {
+            const s = explosionSounds[explosionIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            explosionIndex = (explosionIndex + 1) % explosionSounds.length;
+        }
+
+        function playPowerup() {
+            const s = powerupSounds[powerupIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            powerupIndex = (powerupIndex + 1) % powerupSounds.length;
+        }
+
+        // Предзагрузка звуков
+        function preloadSounds() {
+            [...shootSounds, ...explosionSounds, ...powerupSounds].forEach(sound => {
+                sound.load();
+                sound.volume = 0.7;
+            });
+        }
 
         // Telegram WebApp
         let tg = window.Telegram?.WebApp;
@@ -673,7 +709,7 @@
                 const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
                 particles.push({ x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 30 + Math.random() * 20, size: 3 + Math.random() * 2, color: colors[Math.floor(Math.random() * colors.length)] });
             }
-            try { explosionSound.currentTime = 0; explosionSound.play(); } catch(e) {}
+            playExplosion();
         }
 
         function createPowerUp(x, y, forcedType = null) {
@@ -688,7 +724,7 @@
         }
 
         function applyPowerUp(type) {
-            try { powerupSound.currentTime = 0; powerupSound.play(); } catch(e) {}
+            playPowerup();
             player.flashTime = Date.now() + 300;
             switch(type) {
                 case 'shield': shieldActive = true; setTimeout(() => { shieldActive = false; }, 10000); break;
@@ -1210,6 +1246,9 @@
         function restartGame() { startGame(); }
 
         document.body.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+        // Предзагрузка звуков при загрузке страницы
+        window.addEventListener('load', preloadSounds);
     </script>
 </body>
 </html>
