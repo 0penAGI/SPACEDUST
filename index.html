@@ -1472,6 +1472,7 @@
             const flameHeight = 10 + Math.random() * 10;
             const flameGradient = ctx.createLinearGradient(0, 0, 0, flameHeight);
             flameGradient.addColorStop(0, '#ffff00');
+            // Основное пламя
             flameGradient.addColorStop(1, '#ff8800');
             ctx.fillStyle = flameGradient;
             ctx.shadowColor = '#ffff00';
@@ -1487,6 +1488,15 @@
             ctx.lineTo(player.x + 30, player.y + player.height + flameHeight);
             ctx.closePath();
             ctx.fill();
+            // Дополнительные частицы пламени для эффекта динамики
+            for (let i = 0; i < 4; i++) {
+                const px = player.x + 10 + Math.random() * 20;
+                const py = player.y + player.height;
+                const vx = (Math.random() - 0.5) * 2;
+                const vy = Math.random() * 2 + 1;
+                const size = Math.random() * 3 + 2;
+                particles.push({ x: px, y: py, vx: vx, vy: vy, life: 15 + Math.random() * 10, size: size, color: '#ffaa00' });
+            }
             if (megaShieldStage > 0 && Date.now() < megaShieldEnd) {
                 ctx.save();
                 ctx.beginPath();
