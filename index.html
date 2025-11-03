@@ -771,19 +771,18 @@
             startMining();
         }
 
-        function switchToShooter() {
-            // Hide galaxy UI
+        // Обновлённая функция switchToShooter с поддержкой динамических миссий и $XSDC
+        function switchToShooter(isMission = false, missionDifficulty = 1) {
+            // Скрываем карту и показываем шутер
             document.getElementById('galaxyContainer').style.display = 'none';
             document.getElementById('gameContainer').style.display = 'flex';
-            // Show shooter bottom panel/buttons
             document.getElementById('bottomPanel').style.display = 'flex';
-            // Hide galaxy bottom panel/button
             const galaxyPanel = document.getElementById('bottomPanel-galaxy');
             if (galaxyPanel) galaxyPanel.style.display = 'none';
-            // Hide shooterBtn if present (to avoid double button)
             const shooterBtn = document.getElementById('shooterBtn');
             if (shooterBtn) shooterBtn.style.display = 'none';
-            // If game is not running, show start screen or game over as appropriate
+
+            // Если игра ещё не запущена, активируем стартовый экран или gameOver
             if (!gameRunning) {
                 if (lives <= 0) {
                     document.getElementById('gameOver').style.display = 'block';
@@ -791,7 +790,26 @@
                     document.getElementById('startScreen').style.display = 'block';
                 }
             }
+
+            if (isMission) {
+                gameRunning = true;
+                // Увеличиваем score в зависимости от сложности миссии
+                score = Math.floor(score * missionDifficulty);
+                // enemySpawnRate и bossInterval зависят от сложности
+                enemySpawnRate = 0.03 * missionDifficulty;
+                bossInterval = 45000 / missionDifficulty;
+                // Лог запуска миссии
+                console.log("💥 Миссия запущена с сложностью:", missionDifficulty);
+            } else {
+                gameRunning = true;
+                enemySpawnRate = 0.03;
+                bossInterval = 45000;
+            }
+
+            // Всегда останавливаем майнинг перед запуском шутера
             stopMining();
+            // Запускаем игровой цикл
+            gameLoop();
         }
 
         // Запуск майнинга ресурсов при входе в карту
@@ -813,6 +831,9 @@
         }
         
         // === ГАЛАКТИЧЕСКАЯ КАРТА (Обновление) ===
+        // Глобальная переменная $XSDC (баланс)
+        let currentXSDC = 0;
+
         function loadUpgradeData() {
             try {
                 const data = JSON.parse(localStorage.getItem('xdgame_upgrade_data'));
@@ -825,31 +846,109 @@
             } catch (e) {}
         }
 
-        function initGalaxyMap() {
-            // Загрузка прогресса апгрейдов/ресурсов
-            loadUpgradeData();
-            // Загрузка апгрейдов и эффектов
-            loadData();
-            applyUpgradeEffects();
-            // Обновляем только ресурсы в панели, не пересоздаём всю разметку и не удаляем bottomPanel-galaxy!
-            // Обновить ресурсы
+        // Отображение $XSDC в ресурсах
+        function displayResources() {
             const energyElem = document.getElementById('energy');
             const metalsElem = document.getElementById('metals');
             const crystalsElem = document.getElementById('crystals');
             const scoreElem = document.getElementById('galaxyScore');
+            // Добавляем $XSDC отображение, если его еще нет
+            let xsdcElem = document.getElementById('xsdcAmount');
+            if (!xsdcElem) {
+                const panel = document.querySelector('.resources-panel');
+                if (panel) {
+                    const div = document.createElement('div');
+                    div.innerHTML = `🪙 <span id="xsdcAmount">${Math.floor(currentXSDC)}</span> <span style="color:#ff00ff;">$XSDC</span>`;
+                    panel.appendChild(div);
+                }
+            } else {
+                xsdcElem.textContent = Math.floor(currentXSDC);
+            }
             if (energyElem) energyElem.textContent = Math.floor(currentEnergy);
             if (metalsElem) metalsElem.textContent = Math.floor(currentMetals);
             if (crystalsElem) crystalsElem.textContent = Math.floor(currentCrystals);
             if (scoreElem) scoreElem.textContent = score;
+            // Обновить xsdcElem если он появился только что
+            xsdcElem = document.getElementById('xsdcAmount');
+            if (xsdcElem) xsdcElem.textContent = Math.floor(currentXSDC);
+        }
+
+        // Сохраняем все ресурсы и $XSDC + апгрейды
+        function saveDataAll() {
+            const gameState = {
+                energy: currentEnergy,
+                metals: currentMetals,
+                crystals: currentCrystals,
+                shooterScore: score,
+                shooterLives: lives,
+                upgradeLevels: upgradeLevels,
+                xsdc: currentXSDC
+            };
+            try { localStorage.setItem('xdust_save_data', JSON.stringify(gameState)); } catch(e){}
+        }
+
+        // Загружаем все ресурсы и $XSDC
+        function loadDataAll() {
+            try {
+                const savedData = localStorage.getItem('xdust_save_data');
+                if(!savedData) return false;
+                const data = JSON.parse(savedData);
+                if(typeof data.energy === 'number') currentEnergy = data.energy;
+                if(typeof data.metals === 'number') currentMetals = data.metals;
+                if(typeof data.crystals === 'number') currentCrystals = data.crystals;
+                if(typeof data.shooterScore === 'number') score = data.shooterScore;
+                if(typeof data.shooterLives === 'number') lives = data.shooterLives;
+                if(data.upgradeLevels) upgradeLevels = data.upgradeLevels;
+                if(typeof data.xsdc === 'number') currentXSDC = data.xsdc;
+                applyUpgradeEffects();
+                displayResources();
+                return true;
+            } catch(e) { console.error("Ошибка загрузки данных:", e); return false; }
+        }
+
+        // === GalacticMap: автоматическое завершение миссий, начисление $XSDC ===
+        function attemptCapture(sectorId, sectorObj, onFinish) {
+            // sectorObj: объект сектора (содержит type, resources, ...).
+            // Для миссии: начисляем xsdcRequired*2, для обычного сектора: 10% ресурсов
+            if (sectorObj.type === 'mission') {
+                // Только для миссий (например, $XDUST-9001)
+                const xsdcRequired = 3000; // фиксированное требование для миссии
+                const missionDuration = 5000;
+                setTimeout(() => {
+                    sectorObj.type = 'controlled';
+                    currentXSDC += xsdcRequired * 2;
+                    displayResources();
+                    saveDataAll();
+                    if (typeof onFinish === 'function') onFinish();
+                    initGalaxyMap();
+                }, missionDuration);
+            } else {
+                // Обычный сектор
+                sectorObj.type = 'controlled';
+                // Выдаем бонус $XSDC
+                const bonus = Math.floor((sectorObj.resources || 0) * 0.1);
+                currentXSDC += bonus;
+                displayResources();
+                saveDataAll();
+                if (typeof onFinish === 'function') onFinish();
+                // Перерисовать карту
+                initGalaxyMap();
+            }
+        }
+
+        function initGalaxyMap() {
+            // Загрузка прогресса апгрейдов/ресурсов и $XSDC
+            loadUpgradeData();
+            loadDataAll();
+            applyUpgradeEffects();
+            displayResources();
 
             // Удалить старые сектора (div.sector)
             const galaxyContainer = document.getElementById('galaxyContainer');
-            // Удалить только элементы с классом 'sector'
             Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
             // Также удалить старые звезды, чтобы не плодить их
             Array.from(galaxyContainer.querySelectorAll('div'))
                 .forEach(el => {
-                    // Удаляем "звезды" без класса и без id, которые были добавлены createGalaxyStars
                     if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
                         el.remove();
                     }
@@ -891,21 +990,16 @@
                             ⚡${sector.resources}
                         </div>
                     `;
-                    // Добавляем анимацию и вспышку для $XDUST-9001
                     sectorElement.addEventListener('click', () => {
-                        // Логика для анимации при активации сектора $XDUST-9001
                         if (sector.name === "$XDUST-9001") {
                             if (currentEnergy >= 3000) {
+                                // Запускаем миссию с автоматическим завершением
                                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                    tg.showAlert("🚀 МЕГА-МИССИЯ АКТИВНА!\n⚡ Энергия усилилась!");
+                                    tg.showAlert("🚀 МЕГА-МИССИЯ ЗАПУЩЕНА!\nЗавершение через 5 сек...");
                                 } else {
-                                    alert("🚀 МЕГА-МИССИЯ АКТИВНА!\n⚡ Энергия усилилась!");
+                                    alert("🚀 МЕГА-МИССИЯ ЗАПУЩЕНА!\nЗавершение через 5 сек...");
                                 }
-                                currentEnergy *= 2;
-                                // Обновляем ресурсы
-                                updateGalaxyResources(0);
-
-                                // Добавляем эффект взрыва фрактального света
+                                // Визуальный эффект
                                 const burst = document.createElement('div');
                                 burst.style.position = 'absolute';
                                 burst.style.left = '50%';
@@ -918,6 +1012,14 @@
                                 burst.style.animation = 'burstFade 2s ease-out forwards';
                                 galaxyContainer.appendChild(burst);
                                 setTimeout(() => burst.remove(), 2000);
+                                // Запуск автоматического завершения миссии
+                                attemptCapture(sector.id, sector, () => {
+                                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                        tg.showAlert("✅ Миссия завершена! Получено $XSDC!");
+                                    } else {
+                                        alert("✅ Миссия завершена! Получено $XSDC!");
+                                    }
+                                });
                             } else {
                                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
                                     tg.showAlert(`🔒 Нужно 3000 ⚡\nУ вас: ${currentEnergy}`);
@@ -938,7 +1040,21 @@
                         </div>
                     `;
                     sectorElement.addEventListener('click', () => {
-                        alert(`🚀 Выбран сектор: ${sector.name}\n💎 Ресурсы: ${sector.resources} XDUST`);
+                        // Для enemy и neutral: попытка захвата и бонус $XSDC
+                        if (sector.type === 'enemy' || sector.type === 'neutral') {
+                            // Бонус $XSDC 10% от ресурсов
+                            if (sector.type !== 'controlled') {
+                                attemptCapture(sector.id, sector, () => {
+                                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                        tg.showAlert(`✅ Сектор захвачен! Бонус: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                                    } else {
+                                        alert(`✅ Сектор захвачен! Бонус: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                                    }
+                                });
+                            }
+                        } else {
+                            alert(`🚀 Выбран сектор: ${sector.name}\n💎 Ресурсы: ${sector.resources} XDUST`);
+                        }
                         // Анимация передачи ресурсов с Сириуса
                         if (sector.type === 'enemy') {
                             createResourceStream(sector);
@@ -963,9 +1079,6 @@
                     }
                 }, 5000);
             }
-
-            // Отрисовать магазин апгрейдов
-            // renderUpgradeShop(); // не требуется, теперь используется renderUpgradeShopModal
         }
 
         // Анимация потока ресурсов с Сириуса
@@ -1021,22 +1134,10 @@
             currentEnergy += amount;
             currentMetals += amount * 0.7;
             currentCrystals += amount * 0.3;
-
-            // Обновляем интерфейс
-            const energyElem = document.getElementById('energy');
-            const metalsElem = document.getElementById('metals');
-            const crystalsElem = document.getElementById('crystals');
-            const scoreElem = document.getElementById('galaxyScore');
-            if (energyElem && metalsElem && crystalsElem && scoreElem) {
-                energyElem.textContent = Math.floor(currentEnergy);
-                metalsElem.textContent = Math.floor(currentMetals);
-                crystalsElem.textContent = Math.floor(currentCrystals);
-                scoreElem.textContent = score;
-            }
-
-            // Сохраняем прогресс при изменении ресурсов
-            saveUpgradeData();
-
+            // Обновляем интерфейс, включая $XSDC
+            displayResources();
+            // Сохраняем прогресс при изменении ресурсов и $XSDC
+            saveDataAll();
             // Эффект получения ресурсов
             document.body.style.animation = 'glow 0.5s';
             setTimeout(() => {
