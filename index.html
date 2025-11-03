@@ -1225,45 +1225,6 @@
             });
         }
 
-        // === ОБНОВЛЕНИЯ ===
-        function updateStars() {
-            stars.forEach(star => {
-                star.y += star.speed;
-                if (star.y > canvas.height) {
-                    star.y = 0;
-                    star.x = Math.random() * canvas.width;
-                }
-            });
-        }
-
-        function updateParticles() {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vx *= 0.95;
-                p.vy *= 0.95;
-                p.life--;
-                p.size *= 0.98;
-                if (p.life <= 0 || p.size <= 0.1) particles.splice(i, 1);
-            }
-        }
-
-        function updatePowerUps() {
-            for (let i = powerUps.length - 1; i >= 0; i--) {
-                const powerUp = powerUps[i];
-                powerUp.y += powerUp.speed;
-                if (player.x < powerUp.x + powerUp.width && player.x + player.width > powerUp.x && player.y < powerUp.y + powerUp.height && player.y + player.height > powerUp.y) {
-                    applyPowerUp(powerUp.type);
-                    powerUps.splice(i, 1);
-                    createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff', 20);
-                    score += 50;
-                    updateUI();
-                } else if (powerUp.y > canvas.height) {
-                    powerUps.splice(i, 1);
-                }
-            }
-        }
 
         function movePlayer() {
             const currentSpeed = Date.now() < speedBoostEnd ? player.speed * 1.5 : player.speed;
@@ -1287,12 +1248,6 @@
             }
         }
 
-        function updateBullets() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y -= bullets[i].speed;
-                if (bullets[i].y < 0) bullets.splice(i, 1);
-            }
-        }
 
         function spawnEnemy() {
             if (Date.now() - lastSpawnIncrease > 15000) {
@@ -1337,10 +1292,65 @@
             }
         }
 
+        // === Time Dilation ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
+        let timeDilationFactor = 1.0;
+        let timeDilationMax = 0.5; // минимальный множитель скорости при замедлении
+        let isDilating = false;
+        let overheatLevel = 0;
+        const MAX_OVERHEAT = 100;
+        const DILATED_SHOOT_COOLDOWN = 250;
+
+        // === ОБНОВЛЕНИЯ с учетом Time Dilation ===
+        function updateStars() {
+            stars.forEach(star => {
+                star.y += star.speed * timeDilationFactor;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * timeDilationFactor;
+                p.y += p.vy * timeDilationFactor;
+                p.vx *= 0.95;
+                p.vy *= 0.95;
+                p.life -= timeDilationFactor;
+                p.size *= 0.98;
+                if (p.life <= 0 || p.size <= 0.1) particles.splice(i, 1);
+            }
+        }
+
+        function updatePowerUps() {
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const powerUp = powerUps[i];
+                powerUp.y += powerUp.speed * timeDilationFactor;
+                if (player.x < powerUp.x + powerUp.width && player.x + player.width > powerUp.x && player.y < powerUp.y + powerUp.height && player.y + player.height > powerUp.y) {
+                    applyPowerUp(powerUp.type);
+                    powerUps.splice(i, 1);
+                    createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff', 20);
+                    score += 50;
+                    updateUI();
+                } else if (powerUp.y > canvas.height) {
+                    powerUps.splice(i, 1);
+                }
+            }
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= bullets[i].speed * timeDilationFactor;
+                if (bullets[i].y < 0) bullets.splice(i, 1);
+            }
+        }
+
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
-                enemy.y += enemy.speed;
+                enemy.y += enemy.speed * timeDilationFactor;
                 if (enemy.y > canvas.height) {
                     enemies.splice(i, 1);
                     lives--;
@@ -1349,7 +1359,7 @@
                 }
             }
             if (bossActive && boss) {
-                boss.y += boss.speed;
+                boss.y += boss.speed * timeDilationFactor;
                 if (boss.y > 40) boss.y = 40;
             }
         }
@@ -1508,6 +1518,7 @@
         }
         function setLeft(active) { isLeftPressed = active; document.getElementById('leftBtn').classList.toggle('active', active); updateDx(); }
         function setRight(active) { isRightPressed = active; document.getElementById('rightBtn').classList.toggle('active', active); updateDx(); }
+        // --- Time Dilation Fire/Overheat ---
         function setFire(active) {
             document.getElementById('fireBtn').classList.toggle('active', active);
             clearInterval(fireInterval);
@@ -1515,13 +1526,40 @@
                 // Инициализируем аудио при первом взаимодействии
                 if (!isAudioLoaded) initAudio();
                 fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.25);
+                // Time Dilation: если не перегрето, активируем замедление времени
+                if (overheatLevel < MAX_OVERHEAT) {
+                    isDilating = true;
+                    timeDilationFactor = timeDilationMax;
+                } else {
+                    isDilating = false;
+                    timeDilationFactor = 1.0;
+                }
                 shoot();
                 fireInterval = setInterval(() => {
+                    // Перегрев увеличивается при стрельбе в режиме замедления
+                    if (isDilating) {
+                        overheatLevel += 2;
+                        if (overheatLevel >= MAX_OVERHEAT) {
+                            overheatLevel = MAX_OVERHEAT;
+                            isDilating = false;
+                            timeDilationFactor = 1.0;
+                        }
+                    } else {
+                        // Остывание, если не замедляем
+                        overheatLevel = Math.max(0, overheatLevel - 1);
+                    }
                     fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.08);
                     shoot();
-                }, shootCooldown);
+                }, DILATED_SHOOT_COOLDOWN);
             } else {
                 fireIntensity = 0;
+                isDilating = false;
+                timeDilationFactor = 1.0;
+                // Быстрое остывание при отпускании FIRE
+                const coolInterval = setInterval(() => {
+                    overheatLevel = Math.max(0, overheatLevel - 2);
+                    if (overheatLevel === 0) clearInterval(coolInterval);
+                }, 40);
             }
         }
 
