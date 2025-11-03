@@ -1,9 +1,11 @@
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SPACEDUST - Космический шутер</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -11,6 +13,9 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         
         body {
@@ -63,6 +68,12 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            animation: ui-glow 2s infinite alternate;
+        }
+        
+        @keyframes ui-glow {
+            from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
         }
         
         .ui-item {
@@ -111,7 +122,8 @@
             background: rgba(255, 50, 50, 0.2);
             border-color: #ff3232;
             color: #ff3232;
-            font-size: 28px;
+            font-size: 16px;
+            font-weight: bold;
             position: absolute;
             bottom: 20px;
             left: 50%;
@@ -140,6 +152,12 @@
             border: 2px solid rgba(0, 255, 255, 0.7);
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
             backdrop-filter: blur(10px);
+            animation: screen-pulse 1.5s infinite alternate;
+        }
+        
+        @keyframes screen-pulse {
+            from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+            to { transform: translate(-50%, -50%) scale(1.02); opacity: 1; }
         }
         
         #gameOver {
@@ -254,6 +272,12 @@
             justify-content: center;
             align-items: center;
             font-size: 12px;
+            animation: power-glow 1s infinite alternate;
+        }
+        
+        @keyframes power-glow {
+            from { box-shadow: 0 0 5px gold; }
+            to { box-shadow: 0 0 15px gold; }
         }
         
         /* Добавляем звёздное небо на фон */
@@ -270,6 +294,12 @@
             position: absolute;
             background-color: white;
             border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
         }
     </style>
 </head>
@@ -317,7 +347,7 @@
             <div class="control-btn" id="rightBtn">▶</div>
         </div>
         
-        <div id="fireBtn" class="control-btn">🔥</div>
+        <div id="fireBtn" class="control-btn">FIRE</div>
         
         <div id="leftZone"></div>
         <div id="rightZone"></div>
@@ -352,6 +382,9 @@
                 
                 const opacity = 0.5 + Math.random() * 0.5;
                 star.style.opacity = opacity;
+                
+                const delay = Math.random() * 2;
+                star.style.animationDelay = `${delay}s`;
                 
                 starsContainer.appendChild(star);
             }
@@ -398,6 +431,11 @@
         let particles = [];
         let powerUps = [];
 
+        // Переменные для эффектов бонусов
+        let shieldActive = false;
+        let speedBoostEnd = 0;
+        let laserModeEnd = 0;
+
         // Звёзды для параллакс-эффекта
         function createGameStars() {
             stars = [];
@@ -414,15 +452,16 @@
         createGameStars();
 
         // Частицы взрыва
-        function createParticles(x, y, color = null) {
-            for (let i = 0; i < 12; i++) {
+        function createParticles(x, y, color = null, count = 12) {
+            for (let i = 0; i < count; i++) {
                 const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
                 particles.push({
                     x: x,
                     y: y,
                     vx: (Math.random() - 0.5) * 8,
                     vy: (Math.random() - 0.5) * 8,
-                    life: 30,
+                    life: 30 + Math.random() * 20,
+                    size: 3 + Math.random() * 2,
                     color: colors[Math.floor(Math.random() * colors.length)]
                 });
             }
@@ -445,12 +484,30 @@
             }
         }
 
+        function applyPowerUp(type) {
+            switch(type) {
+                case 'shield':
+                    shieldActive = true;
+                    setTimeout(() => { shieldActive = false; }, 10000);
+                    break;
+                case 'speed':
+                    speedBoostEnd = Date.now() + 10000;
+                    break;
+                case 'laser':
+                    laserModeEnd = Date.now() + 10000;
+                    break;
+            }
+        }
+
         function drawPlayer() {
             ctx.save();
             
-            // Корпус корабля
-            ctx.fillStyle = '#00ffff';
-            ctx.shadowBlur = 10;
+            // Корпус корабля с градиентом
+            const gradient = ctx.createLinearGradient(player.x, player.y, player.x, player.y + player.height);
+            gradient.addColorStop(0, '#00ffff');
+            gradient.addColorStop(1, '#0088ff');
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = '#00ffff';
             
             ctx.beginPath();
@@ -464,40 +521,89 @@
             // Двигатели
             ctx.fillStyle = '#ff00ff';
             ctx.shadowColor = '#ff00ff';
-            ctx.fillRect(player.x + 8, player.y + player.height - 8, 8, 8);
-            ctx.fillRect(player.x + 24, player.y + player.height - 8, 8, 8);
+            ctx.beginPath();
+            ctx.moveTo(player.x + 5, player.y + player.height - 15);
+            ctx.lineTo(player.x + 10, player.y + player.height);
+            ctx.lineTo(player.x + 15, player.y + player.height - 15);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(player.x + 25, player.y + player.height - 15);
+            ctx.lineTo(player.x + 30, player.y + player.height);
+            ctx.lineTo(player.x + 35, player.y + player.height - 15);
+            ctx.closePath();
+            ctx.fill();
             
             // Огни двигателей (анимация)
-            const flameHeight = 5 + Math.random() * 5;
-            ctx.fillStyle = '#ffff00';
+            const flameHeight = 10 + Math.random() * 10;
+            const flameGradient = ctx.createLinearGradient(0, 0, 0, flameHeight);
+            flameGradient.addColorStop(0, '#ffff00');
+            flameGradient.addColorStop(1, '#ff8800');
+            ctx.fillStyle = flameGradient;
             ctx.shadowColor = '#ffff00';
-            ctx.fillRect(player.x + 10, player.y + player.height, 6, flameHeight);
-            ctx.fillRect(player.x + 26, player.y + player.height, 6, flameHeight);
+            ctx.beginPath();
+            ctx.moveTo(player.x + 7, player.y + player.height);
+            ctx.lineTo(player.x + 13, player.y + player.height);
+            ctx.lineTo(player.x + 10, player.y + player.height + flameHeight);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(player.x + 27, player.y + player.height);
+            ctx.lineTo(player.x + 33, player.y + player.height);
+            ctx.lineTo(player.x + 30, player.y + player.height + flameHeight);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Щит, если активен
+            if (shieldActive) {
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.ellipse(player.x + player.width / 2, player.y + player.height / 2, player.width / 1.5, player.height / 1.2, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
             
             ctx.restore();
         }
 
         function drawBullet(bullet) {
             ctx.save();
-            ctx.fillStyle = '#ffff00';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffff00';
+            const isLaser = Date.now() < laserModeEnd;
+            ctx.fillStyle = isLaser ? '#ff00ff' : '#ffff00';
+            ctx.shadowBlur = isLaser ? 15 : 10;
+            ctx.shadowColor = isLaser ? '#ff00ff' : '#ffff00';
             
-            // Создаём эффект плазмы
+            const width = isLaser ? 8 : 4;
+            const height = isLaser ? 20 : 12;
+            
             ctx.beginPath();
-            ctx.moveTo(bullet.x, bullet.y + bullet.height);
-            ctx.lineTo(bullet.x + bullet.width, bullet.y + bullet.height);
-            ctx.lineTo(bullet.x + bullet.width / 2, bullet.y);
+            ctx.moveTo(bullet.x, bullet.y + height);
+            ctx.lineTo(bullet.x + width, bullet.y + height);
+            ctx.lineTo(bullet.x + width / 2, bullet.y);
             ctx.closePath();
             ctx.fill();
+            
+            // Добавляем след
+            if (isLaser) {
+                const trailGradient = ctx.createLinearGradient(bullet.x + width / 2, bullet.y + height, bullet.x + width / 2, bullet.y + height + 10);
+                trailGradient.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
+                trailGradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
+                ctx.fillStyle = trailGradient;
+                ctx.fillRect(bullet.x, bullet.y + height, width, 10);
+            }
             
             ctx.restore();
         }
 
         function drawEnemy(enemy) {
             ctx.save();
-            ctx.fillStyle = '#ff3232';
-            ctx.shadowBlur = 8;
+            const gradient = ctx.createLinearGradient(enemy.x, enemy.y, enemy.x, enemy.y + enemy.height);
+            gradient.addColorStop(0, '#ff3232');
+            gradient.addColorStop(1, '#880000');
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 12;
             ctx.shadowColor = '#ff3232';
             
             ctx.beginPath();
@@ -510,8 +616,19 @@
             
             // Добавляем детали врага
             ctx.fillStyle = '#ff9999';
-            ctx.fillRect(enemy.x + 5, enemy.y + 5, 5, 5);
-            ctx.fillRect(enemy.x + enemy.width - 10, enemy.y + 5, 5, 5);
+            ctx.beginPath();
+            ctx.arc(enemy.x + 10, enemy.y + 10, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(enemy.x + enemy.width - 10, enemy.y + 10, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Двигатели врага
+            const flameHeight = 3 + Math.random() * 3;
+            ctx.fillStyle = '#ffff00';
+            ctx.shadowColor = '#ffff00';
+            ctx.fillRect(enemy.x + 5, enemy.y - flameHeight, 5, flameHeight);
+            ctx.fillRect(enemy.x + enemy.width - 10, enemy.y - flameHeight, 5, flameHeight);
             
             ctx.restore();
         }
@@ -523,27 +640,33 @@
             switch(powerUp.type) {
                 case 'shield':
                     color = '#00aaff';
-                    symbol = '🛡️';
+                    symbol = 'S';
                     break;
                 case 'speed':
                     color = '#00ff00';
-                    symbol = '⚡';
+                    symbol = 'P';
                     break;
                 case 'laser':
                     color = '#ffaa00';
-                    symbol = '🔺';
+                    symbol = 'L';
                     break;
             }
             
-            ctx.fillStyle = color;
-            ctx.shadowBlur = 10;
+            const gradient = ctx.createRadialGradient(
+                powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, 0,
+                powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, color);
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = color;
             ctx.beginPath();
             ctx.arc(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2, 0, Math.PI * 2);
             ctx.fill();
             
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Orbitron';
+            ctx.fillStyle = '#000000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(symbol, powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
@@ -563,8 +686,10 @@
         function drawParticles() {
             particles.forEach((p, i) => {
                 ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life / 30;
-                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = p.life / 50;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.globalAlpha = 1;
             });
         }
@@ -583,8 +708,11 @@
             particles.forEach((p, i) => {
                 p.x += p.vx;
                 p.y += p.vy;
+                p.vx *= 0.95;
+                p.vy *= 0.95;
                 p.life--;
-                if (p.life <= 0) {
+                p.size *= 0.98;
+                if (p.life <= 0 || p.size <= 0.1) {
                     particles.splice(i, 1);
                 }
             });
@@ -599,9 +727,9 @@
                     player.x + player.width > powerUp.x &&
                     player.y < powerUp.y + powerUp.height &&
                     player.y + player.height > powerUp.y) {
+                    applyPowerUp(powerUp.type);
                     powerUps.splice(index, 1);
-                    createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff');
-                    // Здесь можно добавить логику применения бонуса
+                    createParticles(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, '#00ffff', 20);
                     score += 50;
                     updateUI();
                 }
@@ -613,7 +741,8 @@
         }
 
         function movePlayer() {
-            player.x += player.dx;
+            const currentSpeed = Date.now() < speedBoostEnd ? player.speed * 1.5 : player.speed;
+            player.x += player.dx * (currentSpeed / player.speed);
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > canvas.width) {
                 player.x = canvas.width - player.width;
@@ -623,12 +752,13 @@
         function shoot() {
             const now = Date.now();
             if (now - lastShot > shootCooldown) {
+                const isLaser = now < laserModeEnd;
                 bullets.push({
-                    x: player.x + player.width / 2 - 2,
+                    x: player.x + player.width / 2 - (isLaser ? 4 : 2),
                     y: player.y,
-                    width: 4,
-                    height: 12,
-                    speed: 8
+                    width: isLaser ? 8 : 4,
+                    height: isLaser ? 20 : 12,
+                    speed: isLaser ? 12 : 8
                 });
                 lastShot = now;
             }
@@ -642,7 +772,7 @@
         }
 
         function spawnEnemy() {
-            if (Math.random() < 0.02) { // Увеличил шанс появления врагов
+            if (Math.random() < 0.03) { // Увеличил шанс появления врагов
                 const size = 30 + Math.random() * 10;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
@@ -675,8 +805,8 @@
                         bullet.y + bullet.height > enemy.y) {
                         bullets.splice(bIndex, 1);
                         enemies.splice(eIndex, 1);
-                        createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-                        createPowerUp(enemy.x, enemy.y);
+                        createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
+                        createPowerUp(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
                         score += 10;
                         updateUI();
                     }
@@ -689,8 +819,10 @@
                     player.y < enemy.y + enemy.height &&
                     player.y + player.height > enemy.y) {
                     enemies.splice(index, 1);
-                    createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-                    lives--;
+                    createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
+                    if (!shieldActive) {
+                        lives--;
+                    }
                     updateUI();
                     if (lives <= 0) endGame();
                 }
@@ -731,127 +863,117 @@
             animationId = requestAnimationFrame(gameLoop);
         }
 
-        // Улучшенное управление касанием
+        // Улучшенное управление касанием с предотвращением залипания
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
         const fireBtn = document.getElementById('fireBtn');
         const leftZone = document.getElementById('leftZone');
         const rightZone = document.getElementById('rightZone');
 
-        // Функции для обработки касаний
-        function startLeft() {
+        let activeTouches = new Map(); // Для отслеживания касаний
+
+        // Функции для обработки
+        function handleTouchStart(e, action) {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                activeTouches.set(touch.identifier, action);
+            }
+            action(true);
+        }
+
+        function handleTouchEnd(e, action) {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                activeTouches.delete(touch.identifier);
+            }
+            if (![...activeTouches.values()].includes(action)) {
+                action(false);
+            }
+        }
+
+        function startLeft(active) {
             if (gameRunning) {
-                player.dx = -player.speed;
-                leftBtn.classList.add('active');
+                player.dx = active ? -player.speed : 0;
+                leftBtn.classList.toggle('active', active);
             }
         }
 
-        function stopLeft() {
+        function startRight(active) {
             if (gameRunning) {
-                player.dx = 0;
-                leftBtn.classList.remove('active');
+                player.dx = active ? player.speed : 0;
+                rightBtn.classList.toggle('active', active);
             }
         }
 
-        function startRight() {
+        function startFire(active) {
             if (gameRunning) {
-                player.dx = player.speed;
-                rightBtn.classList.add('active');
+                fireBtn.classList.toggle('active', active);
+                if (active && !firing) {
+                    firing = true;
+                    shoot();
+                    fireInterval = setInterval(() => {
+                        if (gameRunning && firing) shoot();
+                    }, shootCooldown);
+                } else if (!active) {
+                    firing = false;
+                    clearInterval(fireInterval);
+                }
             }
         }
 
-        function stopRight() {
-            if (gameRunning) {
-                player.dx = 0;
-                rightBtn.classList.remove('active');
+        // Обработчики для кнопок и зон
+        leftBtn.addEventListener('touchstart', e => handleTouchStart(e, startLeft));
+        leftBtn.addEventListener('touchend', e => handleTouchEnd(e, startLeft));
+        leftBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startLeft));
+
+        rightBtn.addEventListener('touchstart', e => handleTouchStart(e, startRight));
+        rightBtn.addEventListener('touchend', e => handleTouchEnd(e, startRight));
+        rightBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startRight));
+
+        leftZone.addEventListener('touchstart', e => handleTouchStart(e, startLeft));
+        leftZone.addEventListener('touchend', e => handleTouchEnd(e, startLeft));
+        leftZone.addEventListener('touchcancel', e => handleTouchEnd(e, startLeft));
+
+        rightZone.addEventListener('touchstart', e => handleTouchStart(e, startRight));
+        rightZone.addEventListener('touchend', e => handleTouchEnd(e, startRight));
+        rightZone.addEventListener('touchcancel', e => handleTouchEnd(e, startRight));
+
+        fireBtn.addEventListener('touchstart', e => handleTouchStart(e, startFire));
+        fireBtn.addEventListener('touchend', e => handleTouchEnd(e, startFire));
+        fireBtn.addEventListener('touchcancel', e => handleTouchEnd(e, startFire));
+
+        // Глобальный touchend/touchcancel для сброса
+        document.addEventListener('touchend', () => {
+            if (activeTouches.size === 0) {
+                startLeft(false);
+                startRight(false);
+                startFire(false);
             }
-        }
-
-        function startFire() {
-            if (gameRunning && !firing) {
-                firing = true;
-                fireBtn.classList.add('active');
-                shoot();
-                fireInterval = setInterval(() => {
-                    if (gameRunning) shoot();
-                }, shootCooldown);
+        });
+        document.addEventListener('touchcancel', () => {
+            if (activeTouches.size === 0) {
+                startLeft(false);
+                startRight(false);
+                startFire(false);
             }
-        }
-
-        function stopFire() {
-            firing = false;
-            fireBtn.classList.remove('active');
-            clearInterval(fireInterval);
-        }
-
-        // Обработчики для кнопок
-        leftBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startLeft();
-        });
-
-        leftBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopLeft();
-        });
-
-        rightBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startRight();
-        });
-
-        rightBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopRight();
-        });
-
-        // Обработчики для зон касания
-        leftZone.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startLeft();
-        });
-
-        leftZone.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopLeft();
-        });
-
-        rightZone.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startRight();
-        });
-
-        rightZone.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopRight();
-        });
-
-        // Обработчики для кнопки огня
-        let firing = false;
-        let fireInterval;
-
-        fireBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startFire();
-        });
-
-        fireBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopFire();
         });
 
         // Обработчики для предотвращения залипания при потере фокуса
         window.addEventListener('blur', () => {
-            stopLeft();
-            stopRight();
-            stopFire();
+            startLeft(false);
+            startRight(false);
+            startFire(false);
+            activeTouches.clear();
         });
+
+        let firing = false;
+        let fireInterval;
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('controls').style.display = 'flex';
-            document.getElementById('fireBtn').style.display = 'flex';
+            document.getElementById('fireBtn').style.display = 'block';
             gameRunning = true;
             score = 0;
             lives = 3;
@@ -859,6 +981,9 @@
             enemies = [];
             particles = [];
             powerUps = [];
+            shieldActive = false;
+            speedBoostEnd = 0;
+            laserModeEnd = 0;
             player.x = canvas.width / 2 - 20;
             player.dx = 0;
             updateUI();
@@ -882,10 +1007,14 @@
             startGame();
         }
 
-        // Предотвращение скролла
+        // Предотвращение скролла и выделения
         document.body.addEventListener('touchmove', (e) => {
             e.preventDefault();
         }, { passive: false });
+
+        document.body.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+        });
     </script>
 </body>
 </html>
