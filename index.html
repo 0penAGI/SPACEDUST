@@ -80,22 +80,182 @@
     </div>
 
     <script>
-        // === ЗВУКИ: ПУЛ ДЛЯ БЕЗЛАГОВОЙ ИГРЫ ===
-        const shootSounds = [new Audio('shoot.mp3'), new Audio('shoot.mp3'), new Audio('shoot.mp3')];
-        let shootIndex = 0;
-        function playShoot() {
-            const s = shootSounds[shootIndex];
-            s.currentTime = 0;
-            s.play().catch(() => {});
-            shootIndex = (shootIndex + 1) % 3;
-        }
-        const explosionSound = new Audio('explosion.mp3');
-        const powerupSound = new Audio('powerup.mp3');
+        // === ОПТИМИЗИРОВАННАЯ СИСТЕМА ЗВУКОВ ===
+        class SoundManager {
+            constructor() {
+                this.enabled = true;
+                this.audioContext = null;
+                this.soundBuffers = {};
+                this.oscillatorCache = [];
+                this.gainCache = [];
+                this.cacheSize = 8;
+                this.init();
+            }
 
-        // Предзагрузка
-        shootSounds.forEach(s => s.load());
-        explosionSound.load();
-        powerupSound.load();
+            async init() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    await this.preloadBuffers();
+                    await this.createOscillatorCache();
+                    console.log('Sound system initialized');
+                } catch (e) {
+                    console.log('Audio disabled:', e);
+                    this.enabled = false;
+                }
+            }
+
+            async preloadBuffers() {
+                // Создаем буферы для взрывов и powerup
+                const sampleRate = this.audioContext.sampleRate;
+                
+                // Взрыв noise buffer
+                const explosionDuration = 0.3;
+                const explosionBufferSize = sampleRate * explosionDuration;
+                const explosionBuffer = this.audioContext.createBuffer(1, explosionBufferSize, sampleRate);
+                const explosionData = explosionBuffer.getChannelData(0);
+                
+                for (let i = 0; i < explosionBufferSize; i++) {
+                    const progress = i / explosionBufferSize;
+                    explosionData[i] = (Math.random() * 2 - 1) * Math.pow(1 - progress, 2);
+                }
+                this.soundBuffers.explosion = explosionBuffer;
+
+                // Powerup buffer (beep sound)
+                const powerupDuration = 0.4;
+                const powerupBufferSize = sampleRate * powerupDuration;
+                const powerupBuffer = this.audioContext.createBuffer(1, powerupBufferSize, sampleRate);
+                const powerupData = powerupBuffer.getChannelData(0);
+                
+                for (let i = 0; i < powerupBufferSize; i++) {
+                    const progress = i / powerupBufferSize;
+                    const freq = 400 + 800 * progress;
+                    powerupData[i] = Math.sin(2 * Math.PI * freq * i / sampleRate) * Math.pow(1 - progress, 0.5) * 0.3;
+                }
+                this.soundBuffers.powerup = powerupBuffer;
+            }
+
+            async createOscillatorCache() {
+                for (let i = 0; i < this.cacheSize; i++) {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.type = 'sawtooth';
+                    gainNode.gain.value = 0;
+                    
+                    this.oscillatorCache.push(oscillator);
+                    this.gainCache.push(gainNode);
+                }
+            }
+
+            getCachedOscillator() {
+                for (let i = 0; i < this.oscillatorCache.length; i++) {
+                    const oscillator = this.oscillatorCache[i];
+                    if (oscillator && !oscillator.started) {
+                        return { oscillator, gainNode: this.gainCache[i] };
+                    }
+                }
+                // Если все заняты, создаем новый
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                oscillator.type = 'sawtooth';
+                
+                this.oscillatorCache.push(oscillator);
+                this.gainCache.push(gainNode);
+                
+                return { oscillator, gainNode };
+            }
+
+            playShoot() {
+                if (!this.enabled) return;
+                
+                try {
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+
+                    const { oscillator, gainNode } = this.getCachedOscillator();
+                    
+                    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.1);
+                    
+                    try {
+                        oscillator.start();
+                        oscillator.stop(this.audioContext.currentTime + 0.1);
+                        oscillator.onended = () => {
+                            oscillator.started = false;
+                        };
+                        oscillator.started = true;
+                    } catch (e) {
+                        // Oscillator уже запущен, игнорируем
+                    }
+                } catch (e) {
+                    console.log('Shoot sound error:', e);
+                }
+            }
+
+            playExplosion() {
+                if (!this.enabled || !this.soundBuffers.explosion) return;
+                
+                try {
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = this.soundBuffers.explosion;
+                    
+                    const filter = this.audioContext.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(300, this.audioContext.currentTime);
+                    
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.3);
+                    
+                    source.connect(filter);
+                    filter.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    source.start();
+                } catch (e) {
+                    console.log('Explosion sound error:', e);
+                }
+            }
+
+            playPowerup() {
+                if (!this.enabled || !this.soundBuffers.powerup) return;
+                
+                try {
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = this.soundBuffers.powerup;
+                    
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    
+                    source.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    source.start();
+                } catch (e) {
+                    console.log('Powerup sound error:', e);
+                }
+            }
+        }
+
+        // Инициализация звукового менеджера
+        const soundManager = new SoundManager();
 
         // Telegram WebApp
         let tg = window.Telegram?.WebApp;
@@ -171,7 +331,7 @@
                 const colors = color ? [color] : ['#ff0000', '#ff8800', '#ffff00'];
                 particles.push({ x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 30 + Math.random() * 20, size: 3 + Math.random() * 2, color: colors[Math.floor(Math.random() * colors.length)] });
             }
-            try { explosionSound.currentTime = 0; explosionSound.play(); } catch(e) {}
+            soundManager.playExplosion();
         }
 
         function createPowerUp(x, y, forcedType = null) {
@@ -186,7 +346,7 @@
         }
 
         function applyPowerUp(type) {
-            try { powerupSound.currentTime = 0; powerupSound.play(); } catch(e) {}
+            soundManager.playPowerup();
             player.flashTime = Date.now() + 300;
             switch(type) {
                 case 'shield': shieldActive = true; setTimeout(() => { shieldActive = false; }, 10000); break;
@@ -196,7 +356,7 @@
             }
         }
 
-        // === РИСОВАНИЕ (ВСЁ ПОЛНОСТЬЮ) ===
+        // === РИСОВАНИЕ ===
         function drawPlayer() {
             ctx.save();
             let blink = false;
@@ -477,7 +637,7 @@
                     speed: isLaser ? 12 : 8
                 });
                 lastShot = now;
-                playShoot();
+                soundManager.playShoot();
             }
         }
 
