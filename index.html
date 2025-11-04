@@ -805,6 +805,20 @@
             }
 
             // --- Миссионный режим ---
+            // Очистка поля перед запуском миссии
+            if (isMission) {
+                // Полная очистка игрового поля
+                enemies = [];
+                bullets = [];
+                powerups = [];
+                explosions = [];
+                particles = [];
+                boss = null;
+                bossActive = false;
+
+                // Запуск миссии
+                startMission(missionOptions);
+            }
             if (isMission) {
                 // Устанавливаем параметры миссии
                 gameRunning = true;
@@ -881,6 +895,7 @@
         // === ГАЛАКТИЧЕСКАЯ КАРТА (Обновление) ===
         // Глобальная переменная $XSDC (баланс)
         let currentXSDC = 0;
+        let telegramId = null;
 
         function loadUpgradeData() {
             try {
@@ -919,6 +934,7 @@
             // Обновить xsdcElem если он появился только что
             xsdcElem = document.getElementById('xsdcAmount');
             if (xsdcElem) xsdcElem.textContent = Math.floor(currentXSDC);
+            console.log("Telegram ID:", telegramId);
         }
 
         // Сохраняем все ресурсы и $XSDC + апгрейды
@@ -930,7 +946,8 @@
                 shooterScore: score,
                 shooterLives: lives,
                 upgradeLevels: upgradeLevels,
-                xsdc: currentXSDC
+                xsdc: currentXSDC,
+                telegramId: telegramId,
             };
             try { localStorage.setItem('xdust_save_data', JSON.stringify(gameState)); } catch(e){}
         }
@@ -948,6 +965,12 @@
                 if(typeof data.shooterLives === 'number') lives = data.shooterLives;
                 if(data.upgradeLevels) upgradeLevels = data.upgradeLevels;
                 if(typeof data.xsdc === 'number') currentXSDC = data.xsdc;
+                if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+                    telegramId = tg.initDataUnsafe.user.id;
+                }
+                if (typeof data.telegramId === 'number' || typeof data.telegramId === 'string') {
+                    telegramId = data.telegramId;
+                }
                 applyUpgradeEffects();
                 displayResources();
                 return true;
@@ -1746,6 +1769,12 @@
                 setTimeout(() => {
                     drone.x += (Math.random() - 0.5) * 120;
                     drone.y += (Math.random() - 0.5) * 60;
+
+                    // --- НЕ ВЫПАДАТЬ ЗА ГРАНИЦЫ ---
+                    drone.x = Math.max(0, Math.min(canvas.width - drone.width, drone.x));
+                    drone.y = Math.max(0, Math.min(canvas.height - drone.height, drone.y));
+                    // ------------------------------
+
                     createVisualGlitch(drone.x, drone.y);
                 }, 100);
             }
