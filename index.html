@@ -1099,242 +1099,241 @@
         }
 
         // === Новый initGalaxyMap с дополнительными событиями и функциями ===
-function initGalaxyMap() {
-    loadUpgradeData();
-    loadDataAll();
-    applyUpgradeEffects();
-    displayResources();
+        function initGalaxyMap() {
+            loadUpgradeData();
+            loadDataAll();
+            applyUpgradeEffects();
+            displayResources();
 
-    const galaxyContainer = document.getElementById('galaxyContainer');
-    Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
-    Array.from(galaxyContainer.querySelectorAll('div'))
-        .forEach(el => {
-            if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
-                el.remove();
-            }
-        });
-
-    // Get sectors array
-    const sectors = getGalaxySectors();
-
-    // Dynamic events
-    if (Math.random() < 0.18) spawnResourceAsteroid(sectors, galaxyContainer);
-    if (Math.random() < 0.13) enemyRaid(sectors, galaxyContainer);
-    if (Math.random() < 0.11) offerTrade(sectors, galaxyContainer);
-    if (Math.random() < 0.09) triggerDistressSignal(sectors, galaxyContainer);
-    if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
-
-    // Produce resources and update prosperity
-    produceSectorResources(sectors);
-    updateSectorProsperity(sectors);
-
-    sectors.forEach(sector => {
-        let sectorElement = document.createElement('div');
-        let adjustedY = sector.y;
-        if (sector.name === "АЛЬФА ЦЕНТАВРА" || sector.name === "ALPHA CENTAURI") adjustedY = 55; // Support both
-        if (sector.name === "$XDUST" || sector.name === "$XDUST-9999" || sector.name === "$XDUST-9001") {
-            adjustedY -= 8;
-            if (adjustedY < 0) adjustedY = 0;
-        }
-        if (sector.type === "mission") {
-            const isUnlocked = !sector.locked;
-            sectorElement.className = isUnlocked ? "sector mission-unlocked" : "sector mission-locked";
-            sectorElement.style.left = `${sector.x}%`;
-            sectorElement.style.top = `${adjustedY}%`;
-            sectorElement.innerHTML = `
-                <div style="text-align:center; font-size:11px;">
-                    <strong>${sector.name}</strong><br>
-                    ${isUnlocked ? "🚀 MEGA MISSION" : "🔒 LOCKED"}<br>
-                    ⚡${sector.resources}
-                </div>
-            `;
-            sectorElement.addEventListener('click', () => {
-                if (sector.name === "$XDUST-9001") {
-                    if (currentEnergy >= 3000) {
-                        if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                            tg.showAlert("🚀 MEGA MISSION STARTED!\nFinishing in 5 sec...");
-                        } else {
-                            alert("🚀 MEGA MISSION STARTED!\nFinishing in 5 sec...");
-                        }
-                        const burst = document.createElement('div');
-                        burst.style.position = 'absolute';
-                        burst.style.left = '50%';
-                        burst.style.top = '50%';
-                        burst.style.width = '200px';
-                        burst.style.height = '200px';
-                        burst.style.borderRadius = '50%';
-                        burst.style.background = 'radial-gradient(circle, rgba(255,0,255,0.6), transparent 70%)';
-                        burst.style.transform = 'translate(-50%, -50%)';
-                        burst.style.animation = 'burstFade 2s ease-out forwards';
-                        galaxyContainer.appendChild(burst);
-                        setTimeout(() => burst.remove(), 2000);
-                        attemptCapture(sector.id, sector, () => {
-                            if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                tg.showAlert("✅ Mission Completed! $XSDC received!");
-                            } else {
-                                alert("✅ Mission Completed! $XSDC received!");
-                            }
-                        });
-                    } else {
-                        if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                            tg.showAlert(`🔒 Need 3000 ⚡\nYou have: ${currentEnergy}`);
-                        } else {
-                            alert(`🔒 Need 3000 ⚡\nYou have: ${currentEnergy}`);
-                        }
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
+            Array.from(galaxyContainer.querySelectorAll('div'))
+                .forEach(el => {
+                    if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
+                        el.remove();
                     }
+                });
+
+            // Get sectors array
+            const sectors = getGalaxySectors();
+
+            // Dynamic events
+            if (Math.random() < 0.18) spawnResourceAsteroid(sectors, galaxyContainer);
+            if (Math.random() < 0.13) enemyRaid(sectors, galaxyContainer);
+            if (Math.random() < 0.11) offerTrade(sectors, galaxyContainer);
+            if (Math.random() < 0.09) triggerDistressSignal(sectors, galaxyContainer);
+            if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
+
+            // Produce resources and update prosperity
+            produceSectorResources(sectors);
+            updateSectorProsperity(sectors);
+
+            sectors.forEach(sector => {
+                let sectorElement = document.createElement('div');
+                let adjustedY = sector.y;
+                if (sector.name === "АЛЬФА ЦЕНТАВРА" || sector.name === "ALPHA CENTAURI") adjustedY = 55; // Support both
+                if (sector.name === "$XDUST" || sector.name === "$XDUST-9999" || sector.name === "$XDUST-9001") {
+                    adjustedY -= 8;
+                    if (adjustedY < 0) adjustedY = 0;
                 }
-            });
-        } else if (sector.type === "xdust9999") {
-            sectorElement.className = "sector xdust9999-sector";
-            sectorElement.style.left = `${sector.x}%`;
-            sectorElement.style.top = `${adjustedY}%`;
-            sectorElement.innerHTML = `
-                <div style="text-align:center; font-size:13px;">
-                    <strong style="color:#ff2222; text-shadow:0 0 12px #ff2222;">${sector.name}</strong><br>
-                    <span style="color:#ff5555;">${sector.description && sector.description === "СЕКРЕТНЫЙ СЕКТОР" ? "SECRET SECTOR" : sector.description}</span><br>
-                    <span style="color:#ff2222;">⚡${sector.resources}</span>
-                </div>
-            `;
-            sectorElement.style.boxShadow = "0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222";
-            sectorElement.style.background = "radial-gradient(circle at 55% 60%, #ff3333 0%, #990000 70%, transparent 100%)";
-            sectorElement.style.border = "3px solid #ff2222";
-            sectorElement.style.animation = "xdust9999-glow 1.3s infinite alternate";
-            sectorElement.style.zIndex = 11;
-            let tail = document.createElement('div');
-            tail.style.position = 'absolute';
-            tail.style.left = '50%';
-            tail.style.top = '100%';
-            tail.style.transform = 'translateX(-50%)';
-            tail.style.width = '18px';
-            tail.style.height = '80px';
-            tail.style.background = 'linear-gradient(180deg, rgba(255,0,0,0.7) 0%, rgba(255,0,0,0.1) 100%)';
-            tail.style.borderRadius = '50% 50% 70% 70%/30% 30% 100% 100%';
-            tail.style.filter = 'blur(2.7px)';
-            tail.style.pointerEvents = 'none';
-            tail.style.zIndex = 10;
-            tail.style.opacity = "0.85";
-            tail.className = "xdust9999-tail";
-            sectorElement.appendChild(tail);
-            sectorElement.addEventListener('click', () => {
-                handleXDUSTEncounter(sector);
-            });
-        } else if (sector.type === "xdust") {
-            sectorElement.className = "sector xdust-sector";
-            sectorElement.style.left = `${sector.x}%`;
-            sectorElement.style.top = `${adjustedY}%`;
-            sectorElement.innerHTML = `
-                <div style="text-align:center; font-size:13px;">
-                    <strong style="color:#00ffff; text-shadow:0 0 14px #00ffff;">${sector.name}</strong><br>
-                    <span style="color:#00ffff;">${sector.description && sector.description === "Уникальный сектор XDUST" ? "Unique XDUST Sector" : sector.description}</span><br>
-                    <span style="color:#00ffff;">⚡${sector.resources}</span>
-                </div>
-            `;
-            sectorElement.style.boxShadow = "0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff";
-            sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00ffff 0%, #005577 70%, transparent 100%)";
-            sectorElement.style.border = "3px solid #00ffff";
-            sectorElement.style.animation = "xdust-glow 1.7s infinite alternate";
-            sectorElement.style.zIndex = 12;
-            let ring = document.createElement('div');
-            ring.style.position = 'absolute';
-            ring.style.left = '-15%';
-            ring.style.top = '-15%';
-            ring.style.width = '130%';
-            ring.style.height = '130%';
-            ring.style.border = '2.5px solid #00ffff';
-            ring.style.borderRadius = '50%';
-            ring.style.opacity = '0.5';
-            ring.style.pointerEvents = 'none';
-            ring.style.animation = "xdust-ring 2.7s infinite linear";
-            ring.className = "xdust-ring";
-            sectorElement.appendChild(ring);
-            sectorElement.addEventListener('click', () => {
-                handleXDUSTEncounter(sector);
-            });
-        } else {
-            sectorElement.className = `sector ${sector.type}`;
-            sectorElement.style.left = `${sector.x}%`;
-            sectorElement.style.top = `${adjustedY}%`;
-            sectorElement.innerHTML = `
-                <div style="text-align: center; font-size: 10px;">
-                    <strong>${sector.name === "СИРИУС" ? "SIRIUS"
-                        : sector.name === "АЛЬФА ЦЕНТАВРА" ? "ALPHA CENTAURI"
-                        : sector.name === "БЕТЕЛЬГЕЙЗЕ" ? "BETELGEUSE"
-                        : sector.name === "ПРОЦИОН" ? "PROCYON"
-                        : sector.name === "ВЕГА" ? "VEGA"
-                        : sector.name === "АРКТУР" ? "ARCTURUS"
-                        : sector.name === "РИГЕЛЬ" ? "RIGEL"
-                        : sector.name}
-                    </strong><br>
-                    ⚡${sector.resources}
-                </div>
-            `;
-            sectorElement.addEventListener('click', () => {
-                if (sector.type === 'enemy' || sector.type === 'neutral') {
-                    if (sector.type !== 'controlled') {
-                        attemptCapture(sector.id, sector, () => {
-                            if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                tg.showAlert(`✅ Sector captured! Bonus: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                if (sector.type === "mission") {
+                    const isUnlocked = !sector.locked;
+                    sectorElement.className = isUnlocked ? "sector mission-unlocked" : "sector mission-locked";
+                    sectorElement.style.left = `${sector.x}%`;
+                    sectorElement.style.top = `${adjustedY}%`;
+                    sectorElement.innerHTML = `
+                        <div style="text-align:center; font-size:11px;">
+                            <strong>${sector.name}</strong><br>
+                            ${isUnlocked ? "🚀 MEGA MISSION" : "🔒 LOCKED"}<br>
+                            ⚡${sector.resources}
+                        </div>
+                    `;
+                    sectorElement.addEventListener('click', () => {
+                        if (sector.name === "$XDUST-9001") {
+                            if (currentEnergy >= 3000) {
+                                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                    tg.showAlert("🚀 MEGA MISSION STARTED!\nFinishing in 5 sec...");
+                                } else {
+                                    alert("🚀 MEGA MISSION STARTED!\nFinishing in 5 sec...");
+                                }
+                                const burst = document.createElement('div');
+                                burst.style.position = 'absolute';
+                                burst.style.left = '50%';
+                                burst.style.top = '50%';
+                                burst.style.width = '200px';
+                                burst.style.height = '200px';
+                                burst.style.borderRadius = '50%';
+                                burst.style.background = 'radial-gradient(circle, rgba(255,0,255,0.6), transparent 70%)';
+                                burst.style.transform = 'translate(-50%, -50%)';
+                                burst.style.animation = 'burstFade 2s ease-out forwards';
+                                galaxyContainer.appendChild(burst);
+                                setTimeout(() => burst.remove(), 2000);
+                                attemptCapture(sector.id, sector, () => {
+                                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                        tg.showAlert("✅ Mission Completed! $XSDC received!");
+                                    } else {
+                                        alert("✅ Mission Completed! $XSDC received!");
+                                    }
+                                });
                             } else {
-                                alert(`✅ Sector captured! Bonus: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                    tg.showAlert(`🔒 Need 3000 ⚡\nYou have: ${currentEnergy}`);
+                                } else {
+                                    alert(`🔒 Need 3000 ⚡\nYou have: ${currentEnergy}`);
+                                }
                             }
-                        });
-                    }
+                        }
+                    });
+                } else if (sector.type === "xdust9999") {
+                    sectorElement.className = "sector xdust9999-sector";
+                    sectorElement.style.left = `${sector.x}%`;
+                    sectorElement.style.top = `${adjustedY}%`;
+                    sectorElement.innerHTML = `
+                        <div style="text-align:center; font-size:13px;">
+                            <strong style="color:#ff2222; text-shadow:0 0 12px #ff2222;">${sector.name}</strong><br>
+                            <span style="color:#ff5555;">${sector.description && sector.description === "СЕКРЕТНЫЙ СЕКТОР" ? "SECRET SECTOR" : sector.description}</span><br>
+                            <span style="color:#ff2222;">⚡${sector.resources}</span>
+                        </div>
+                    `;
+                    sectorElement.style.boxShadow = "0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222";
+                    sectorElement.style.background = "radial-gradient(circle at 55% 60%, #ff3333 0%, #990000 70%, transparent 100%)";
+                    sectorElement.style.border = "3px solid #ff2222";
+                    sectorElement.style.animation = "xdust9999-glow 1.3s infinite alternate";
+                    sectorElement.style.zIndex = 11;
+                    let tail = document.createElement('div');
+                    tail.style.position = 'absolute';
+                    tail.style.left = '50%';
+                    tail.style.top = '100%';
+                    tail.style.transform = 'translateX(-50%)';
+                    tail.style.width = '18px';
+                    tail.style.height = '80px';
+                    tail.style.background = 'linear-gradient(180deg, rgba(255,0,0,0.7) 0%, rgba(255,0,0,0.1) 100%)';
+                    tail.style.borderRadius = '50% 50% 70% 70%/30% 30% 100% 100%';
+                    tail.style.filter = 'blur(2.7px)';
+                    tail.style.pointerEvents = 'none';
+                    tail.style.zIndex = 10;
+                    tail.style.opacity = "0.85";
+                    tail.className = "xdust9999-tail";
+                    sectorElement.appendChild(tail);
+                    sectorElement.addEventListener('click', () => {
+                        handleXDUSTEncounter(sector);
+                    });
+                } else if (sector.type === "xdust") {
+                    sectorElement.className = "sector xdust-sector";
+                    sectorElement.style.left = `${sector.x}%`;
+                    sectorElement.style.top = `${adjustedY}%`;
+                    sectorElement.innerHTML = `
+                        <div style="text-align:center; font-size:13px;">
+                            <strong style="color:#00ffff; text-shadow:0 0 14px #00ffff;">${sector.name}</strong><br>
+                            <span style="color:#00ffff;">${sector.description && sector.description === "Уникальный сектор XDUST" ? "Unique XDUST Sector" : sector.description}</span><br>
+                            <span style="color:#00ffff;">⚡${sector.resources}</span>
+                        </div>
+                    `;
+                    sectorElement.style.boxShadow = "0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff";
+                    sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00ffff 0%, #005577 70%, transparent 100%)";
+                    sectorElement.style.border = "3px solid #00ffff";
+                    sectorElement.style.animation = "xdust-glow 1.7s infinite alternate";
+                    sectorElement.style.zIndex = 12;
+                    let ring = document.createElement('div');
+                    ring.style.position = 'absolute';
+                    ring.style.left = '-15%';
+                    ring.style.top = '-15%';
+                    ring.style.width = '130%';
+                    ring.style.height = '130%';
+                    ring.style.border = '2.5px solid #00ffff';
+                    ring.style.borderRadius = '50%';
+                    ring.style.opacity = '0.5';
+                    ring.style.pointerEvents = 'none';
+                    ring.style.animation = "xdust-ring 2.7s infinite linear";
+                    ring.className = "xdust-ring";
+                    sectorElement.appendChild(ring);
+                    sectorElement.addEventListener('click', () => {
+                        handleXDUSTEncounter(sector);
+                    });
                 } else {
-                    alert(`🚀 Selected sector: ${sector.name}\n💎 Resources: ${sector.resources} XDUST`);
+                    sectorElement.className = `sector ${sector.type}`;
+                    sectorElement.style.left = `${sector.x}%`;
+                    sectorElement.style.top = `${adjustedY}%`;
+                    sectorElement.innerHTML = `
+                        <div style="text-align: center; font-size: 10px;">
+                            <strong>${sector.name === "СИРИУС" ? "SIRIUS"
+                                : sector.name === "АЛЬФА ЦЕНТАВРА" ? "ALPHA CENTAURI"
+                                : sector.name === "БЕТЕЛЬГЕЙЗЕ" ? "BETELGEUSE"
+                                : sector.name === "ПРОЦИОН" ? "PROCYON"
+                                : sector.name === "ВЕГА" ? "VEGA"
+                                : sector.name === "АРКТУР" ? "ARCTURUS"
+                                : sector.name === "РИГЕЛЬ" ? "RIGEL"
+                                : sector.name}
+                            </strong><br>
+                            ⚡${sector.resources}
+                        </div>
+                    `;
+                    sectorElement.addEventListener('click', () => {
+                        if (sector.type === 'enemy' || sector.type === 'neutral') {
+                            if (sector.type !== 'controlled') {
+                                attemptCapture(sector.id, sector, () => {
+                                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                        tg.showAlert(`✅ Sector captured! Bonus: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                                    } else {
+                                        alert(`✅ Sector captured! Bonus: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                                    }
+                                });
+                            }
+                        } else {
+                            alert(`🚀 Selected sector: ${sector.name}\n💎 Resources: ${sector.resources} XDUST`);
+                        }
+                        if (sector.type === 'enemy') {
+                            createResourceStream(sector);
+                        }
+                    });
                 }
-                if (sector.type === 'enemy') {
-                    createResourceStream(sector);
-                }
+                galaxyContainer.appendChild(sectorElement);
             });
-        }
-        galaxyContainer.appendChild(sectorElement);
-    });
-    // Add CSS animations for XDUST-9999 and XDUST sectors (once)
-    if (!document.getElementById('xdust9999-glow-style')) {
-        const style = document.createElement('style');
-        style.id = 'xdust9999-glow-style';
-        style.innerHTML = `
-        @keyframes xdust9999-glow {
-            0% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
-            50% { box-shadow: 0 0 70px 25px #ff2222, 0 0 150px 60px #ff2222; opacity:1;}
-            100% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
-        }
-        @keyframes xdust-glow {
-            0% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
-            50% { box-shadow: 0 0 80px 25px #00ffff, 0 0 160px 60px #00ffff; opacity:1;}
-            100% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
-        }
-        @keyframes xdust-ring {
-            0% { transform: scale(1); opacity: 0.5;}
-            70% { transform: scale(1.3); opacity: 0.9;}
-            100% { transform: scale(1.7); opacity: 0;}
-        }
-        `;
-        document.head.appendChild(style);
-    }
-    if (!galaxyContainer.querySelector('.galaxy-star')) {
-        createGalaxyStars();
-    }
-    if (!galaxyContainer._xdustAutoTransfer) {
-        galaxyContainer._xdustAutoTransfer = setInterval(() => {
-            const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.name !== "SIRIUS" && s.type !== "mission");
-            const randomSector = filtered[Math.floor(Math.random() * filtered.length)];
-            if (randomSector) {
-                createResourceStream(randomSector);
+            // Add CSS animations for XDUST-9999 and XDUST sectors (once)
+            if (!document.getElementById('xdust9999-glow-style')) {
+                const style = document.createElement('style');
+                style.id = 'xdust9999-glow-style';
+                style.innerHTML = `
+                @keyframes xdust9999-glow {
+                    0% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+                    50% { box-shadow: 0 0 70px 25px #ff2222, 0 0 150px 60px #ff2222; opacity:1;}
+                    100% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+                }
+                @keyframes xdust-glow {
+                    0% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
+                    50% { box-shadow: 0 0 80px 25px #00ffff, 0 0 160px 60px #00ffff; opacity:1;}
+                    100% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
+                }
+                @keyframes xdust-ring {
+                    0% { transform: scale(1); opacity: 0.5;}
+                    70% { transform: scale(1.3); opacity: 0.9;}
+                    100% { transform: scale(1.7); opacity: 0;}
+                }
+                `;
+                document.head.appendChild(style);
             }
-        }, 5000);
-    }
-}
+            if (!galaxyContainer.querySelector('.galaxy-star')) {
+                createGalaxyStars();
+            }
+            if (!galaxyContainer._xdustAutoTransfer) {
+                galaxyContainer._xdustAutoTransfer = setInterval(() => {
+                    const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.name !== "SIRIUS" && s.type !== "mission");
+                    const randomSector = filtered[Math.floor(Math.random() * filtered.length)];
+                    if (randomSector) {
+                        createResourceStream(randomSector);
+                    }
+                }, 5000);
+            }
+        }
 
         
-        // === Дополнительные функции для событий на галактической карте ===
-        // 1. Ресурсный астероид (обновлённая версия)
         function spawnResourceAsteroid(sectors, container) {
-            // Выбираем случайный сектор (без специальных)
             const candidates = sectors.filter(s => !["xdust", "xdust9999", "mission"].includes(s.type));
             const target = candidates[Math.floor(Math.random() * candidates.length)];
+
             const asteroid = document.createElement('div');
             asteroid.className = 'sector asteroid-event';
+            asteroid.id = `asteroid-${Date.now()}`; // unique ID
             asteroid.style.position = 'absolute';
             asteroid.style.left = `${target.x + (Math.random() * 10 - 5)}%`;
             asteroid.style.top = `${target.y + (Math.random() * 10 - 5)}%`;
@@ -1345,19 +1344,21 @@ function initGalaxyMap() {
             asteroid.style.boxShadow = '0 0 20px #ffaa00, 0 0 60px #ffaa00';
             asteroid.style.zIndex = 100;
             asteroid.innerHTML = '<div style="text-align:center;font-size:10px;color:#ffaa00;">🪨 ASTEROID<br>+RESOURCES</div>';
+
             asteroid.addEventListener('click', () => {
-                // Add resources
+                loadUpgradeData(); // ensures upgrades/resources are current
                 const base = 400 + Math.floor(Math.random() * 400);
                 currentEnergy += base;
                 currentMetals += Math.floor(base * 0.7);
                 currentCrystals += Math.floor(base * 0.25);
+                // Optional: reward some $XDUST
+                currentXSDC += 50;
                 displayResources();
                 saveDataAll && saveDataAll();
                 asteroid.remove();
-                if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert("🪨 Resource asteroid collected! Resources gained.");
-                }
+                if (tg && tg.showAlert) tg.showAlert("🪨 Resource asteroid collected! Resources + $XDUST gained.");
             });
+
             container.appendChild(asteroid);
             setTimeout(() => asteroid.remove(), 11000);
         }
