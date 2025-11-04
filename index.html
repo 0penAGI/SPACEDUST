@@ -640,6 +640,51 @@
             // Можно вызвать renderUpgradeShopModal() если нужно синхронизировать данные
         }
 
+        
+        
+        // === Обработчик встречи с сектором $XDUST ===
+        function handleXDUSTEncounter(sector) {
+            if (sector.type === "xdust") {
+                if (sector.visited) {
+                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                        tg.showAlert("✨ Вы уже посетили сектор $XDUST!");
+                    } else {
+                        alert("✨ Вы уже посетили сектор $XDUST!");
+                    }
+                    return;
+                }
+                // Визуальный спецэффект: бирюзовый всплеск
+                const galaxyContainer = document.getElementById('galaxyContainer');
+                const burst = document.createElement('div');
+                burst.style.position = 'absolute';
+                burst.style.left = `${sector.x}%`;
+                burst.style.top = `${sector.y}%`;
+                burst.style.width = '180px';
+                burst.style.height = '180px';
+                burst.style.borderRadius = '50%';
+                burst.style.background = 'radial-gradient(circle, rgba(0,255,255,0.7), transparent 70%)';
+                burst.style.transform = 'translate(-50%, -50%)';
+                burst.style.animation = 'burstFade 2s ease-out forwards';
+                burst.style.pointerEvents = 'none';
+                galaxyContainer.appendChild(burst);
+                setTimeout(() => burst.remove(), 1700);
+                // Бонус $XSDC
+                const xsdcReward = 3141;
+                currentXSDC += xsdcReward;
+                displayResources();
+                saveDataAll && saveDataAll();
+                sector.visited = true;
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert(`✨ Уникальный сектор $XDUST! Бонус: +${xsdcReward} $XSDC`);
+                } else {
+                    alert(`✨ Уникальный сектор $XDUST! Бонус: +${xsdcReward} $XSDC`);
+                }
+                // Обновить карту для отображения посещения (например, можно затемнить сектор)
+                initGalaxyMap();
+            }
+            // Для других типов можно добавить обработку при необходимости
+        }
+
         // Новый: отрисовка апгрейдов внутри модального окна
         function renderUpgradeShopModal() {
             const list = document.getElementById('upgradesListModal');
@@ -1059,6 +1104,18 @@
                 description: "СЕКРЕТНЫЙ СЕКТОР",
             };
             sectors.push(xdust9999Sector);
+            // Новый сектор: $XDUST с уникальной анимацией и обработчиком встречи
+            const xdustSpecialSector = {
+                id: 7777,
+                x: 30,
+                y: 88,
+                name: "$XDUST",
+                type: "xdust",
+                resources: 7777,
+                description: "Уникальный сектор XDUST",
+                visited: false
+            };
+            sectors.push(xdustSpecialSector);
 
             // Создаем секторы на карте
             sectors.forEach(sector => {
@@ -1152,6 +1209,42 @@
                     sectorElement.addEventListener('click', () => {
                         handleXDUSTEncounter(sector);
                     });
+                } else if (sector.type === "xdust") {
+                    // Новый сектор $XDUST — уникальная анимация и обработчик встречи
+                    sectorElement.className = "sector xdust-sector";
+                    sectorElement.style.left = `${sector.x}%`;
+                    sectorElement.style.top = `${sector.y}%`;
+                    sectorElement.innerHTML = `
+                        <div style="text-align:center; font-size:13px;">
+                            <strong style="color:#00ffff; text-shadow:0 0 14px #00ffff;">${sector.name}</strong><br>
+                            <span style="color:#00ffff;">${sector.description}</span><br>
+                            <span style="color:#00ffff;">⚡${sector.resources}</span>
+                        </div>
+                    `;
+                    // Анимация: голубое пульсирующее свечение и кольца
+                    sectorElement.style.boxShadow = "0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff";
+                    sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00ffff 0%, #005577 70%, transparent 100%)";
+                    sectorElement.style.border = "3px solid #00ffff";
+                    sectorElement.style.animation = "xdust-glow 1.7s infinite alternate";
+                    sectorElement.style.zIndex = 12;
+                    // Кольцевой эффект
+                    let ring = document.createElement('div');
+                    ring.style.position = 'absolute';
+                    ring.style.left = '-15%';
+                    ring.style.top = '-15%';
+                    ring.style.width = '130%';
+                    ring.style.height = '130%';
+                    ring.style.border = '2.5px solid #00ffff';
+                    ring.style.borderRadius = '50%';
+                    ring.style.opacity = '0.5';
+                    ring.style.pointerEvents = 'none';
+                    ring.style.animation = "xdust-ring 2.7s infinite linear";
+                    ring.className = "xdust-ring";
+                    sectorElement.appendChild(ring);
+                    // Обработчик клика
+                    sectorElement.addEventListener('click', () => {
+                        handleXDUSTEncounter(sector);
+                    });
                 } else {
                     sectorElement.className = `sector ${sector.type}`;
                     sectorElement.style.left = `${sector.x}%`;
@@ -1186,7 +1279,7 @@
                 }
                 galaxyContainer.appendChild(sectorElement);
             });
-            // Добавим CSS-анимацию для сектора $XDUST-9999 (однократно)
+            // Добавим CSS-анимации для секторов $XDUST-9999 и $XDUST (однократно)
             if (!document.getElementById('xdust9999-glow-style')) {
                 const style = document.createElement('style');
                 style.id = 'xdust9999-glow-style';
@@ -1195,6 +1288,16 @@
                     0% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
                     50% { box-shadow: 0 0 70px 25px #ff2222, 0 0 150px 60px #ff2222; opacity:1;}
                     100% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+                }
+                @keyframes xdust-glow {
+                    0% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
+                    50% { box-shadow: 0 0 80px 25px #00ffff, 0 0 160px 60px #00ffff; opacity:1;}
+                    100% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
+                }
+                @keyframes xdust-ring {
+                    0% { transform: scale(1); opacity: 0.5;}
+                    70% { transform: scale(1.3); opacity: 0.9;}
+                    100% { transform: scale(1.7); opacity: 0;}
                 }
                 `;
                 document.head.appendChild(style);
@@ -2381,4 +2484,3 @@
     </script>
 </body>
 </html>
-
