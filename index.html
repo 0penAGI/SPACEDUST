@@ -963,7 +963,8 @@
             const metalsElem = document.getElementById('metals');
             const crystalsElem = document.getElementById('crystals');
             const scoreElem = document.getElementById('galaxyScore');
-            // Добавляем $XSDC отображение, если его еще нет
+
+            // $XSDC отображение
             let xsdcElem = document.getElementById('xsdcAmount');
             if (!xsdcElem) {
                 const panel = document.querySelector('.resources-panel');
@@ -971,17 +972,25 @@
                     const div = document.createElement('div');
                     div.innerHTML = `🪙 <span id="xsdcAmount">${Math.floor(currentXSDC)}</span> <span style="color:#ff00ff;">$XSDC</span>`;
                     panel.appendChild(div);
+                    xsdcElem = div.querySelector('#xsdcAmount');
                 }
-            } else {
-                xsdcElem.textContent = Math.floor(currentXSDC);
             }
-            if (energyElem) energyElem.textContent = Math.floor(currentEnergy);
-            if (metalsElem) metalsElem.textContent = Math.floor(currentMetals);
-            if (crystalsElem) crystalsElem.textContent = Math.floor(currentCrystals);
-            if (scoreElem) scoreElem.textContent = score;
-            // Обновить xsdcElem если он появился только что
-            xsdcElem = document.getElementById('xsdcAmount');
-            if (xsdcElem) xsdcElem.textContent = Math.floor(currentXSDC);
+
+            // Функция подсветки изменения
+            const highlightChange = (elem) => {
+                if (!elem) return;
+                elem.style.transition = 'background-color 0.3s';
+                elem.style.backgroundColor = '#00ffff33';
+                setTimeout(() => { elem.style.backgroundColor = 'transparent'; }, 300);
+            };
+
+            // Обновляем значения и подсвечиваем изменения
+            if (energyElem) { energyElem.textContent = Math.floor(currentEnergy); highlightChange(energyElem); }
+            if (metalsElem) { metalsElem.textContent = Math.floor(currentMetals); highlightChange(metalsElem); }
+            if (crystalsElem) { crystalsElem.textContent = Math.floor(currentCrystals); highlightChange(crystalsElem); }
+            if (scoreElem) { scoreElem.textContent = score; highlightChange(scoreElem); }
+            if (xsdcElem) { xsdcElem.textContent = Math.floor(currentXSDC); highlightChange(xsdcElem); }
+
             console.log("Telegram ID:", telegramId);
         }
 
@@ -1120,11 +1129,21 @@
             // Создаем секторы на карте
             sectors.forEach(sector => {
                 let sectorElement = document.createElement('div');
+                // Корректировка позиции по Y для определённых секторов
+                let adjustedY = sector.y;
+                // Поднять Альфа Центавра выше Веги
+                if (sector.name === "АЛЬФА ЦЕНТАВРА") adjustedY = 55; // ВЕГА у нас 70, ставим выше 55%
+                // Поднять все сектора $XDUST
+                if (sector.name === "$XDUST" || sector.name === "$XDUST-9999" || sector.name === "$XDUST-9001") {
+                    adjustedY -= 8; // примерно 60 пикселей для карты высотой ~750px
+                    if (adjustedY < 0) adjustedY = 0; // защита от выхода за предел
+                }
                 if (sector.type === "mission") {
                     const isUnlocked = !sector.locked;
                     sectorElement.className = isUnlocked ? "sector mission-unlocked" : "sector mission-locked";
                     sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${sector.y}%`;
+                    // sectorElement.style.top = `${sector.y}%`; // Удалено, чтобы не дублировать
+                    sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align:center; font-size:11px;">
                             <strong>${sector.name}</strong><br>
@@ -1175,7 +1194,8 @@
                     // Новый сектор $XDUST-9999
                     sectorElement.className = "sector xdust9999-sector";
                     sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${sector.y}%`;
+                    // sectorElement.style.top = `${sector.y}%`; // Удалено
+                    sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align:center; font-size:13px;">
                             <strong style="color:#ff2222; text-shadow:0 0 12px #ff2222;">${sector.name}</strong><br>
@@ -1213,7 +1233,8 @@
                     // Новый сектор $XDUST — уникальная анимация и обработчик встречи
                     sectorElement.className = "sector xdust-sector";
                     sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${sector.y}%`;
+                    // sectorElement.style.top = `${sector.y}%`; // Удалено
+                    sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align:center; font-size:13px;">
                             <strong style="color:#00ffff; text-shadow:0 0 14px #00ffff;">${sector.name}</strong><br>
@@ -1248,7 +1269,8 @@
                 } else {
                     sectorElement.className = `sector ${sector.type}`;
                     sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${sector.y}%`;
+                    // sectorElement.style.top = `${sector.y}%`; // Удалено
+                    sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align: center; font-size: 10px;">
                             <strong>${sector.name}</strong><br>
