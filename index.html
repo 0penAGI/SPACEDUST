@@ -1275,6 +1275,117 @@
             setTimeout(() => { if (hhaas.parentNode) hhaas.remove(); }, 20000);
         }
 
+        // === Новый типы случайных событий на галактической карте ===
+        function spawnCosmicStorm(sectors, container) {
+            // Космический шторм: временно снижает добычу ресурсов
+            if (!container) return;
+            if (container.querySelector('.cosmic-storm-event')) return;
+            const x = 10 + Math.random() * 80;
+            const y = 10 + Math.random() * 80;
+            const storm = document.createElement('div');
+            storm.className = 'sector cosmic-storm-event';
+            storm.style.position = 'absolute';
+            storm.style.left = `${x}%`;
+            storm.style.top = `${y}%`;
+            storm.style.width = '68px';
+            storm.style.height = '68px';
+            storm.style.borderRadius = '50%';
+            storm.style.background = 'radial-gradient(circle, #99e 40%, #223366 100%)';
+            storm.style.border = '2.5px dashed #99e';
+            storm.style.boxShadow = '0 0 36px #99e, 0 0 80px #223366';
+            storm.style.zIndex = 170;
+            storm.style.display = 'flex';
+            storm.style.alignItems = 'center';
+            storm.style.justifyContent = 'center';
+            storm.style.cursor = 'pointer';
+            storm.innerHTML = `<div style="text-align:center;font-size:14px;font-weight:bold;color:#fff;text-shadow:0 0 9px #99e;">🌩️<br>COSMIC<br>STORM</div>`;
+            storm.animate([
+                { transform: 'scale(1)', opacity: 0.92 },
+                { transform: 'scale(1.13)', opacity: 1 },
+                { transform: 'scale(1)', opacity: 0.92 }
+            ], { duration: 1600, iterations: Infinity });
+            storm.addEventListener('click', () => {
+                // Влияет на добычу: снижает на 40% на 15 сек
+                if (!window._stormMiningPenalty) window._stormMiningPenalty = 0;
+                window._stormMiningPenalty += 0.4;
+                setTimeout(() => { window._stormMiningPenalty -= 0.4; }, 15000);
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert("🌩️ Cosmic Storm! Mining -40% for 15 sec.");
+                } else {
+                    alert("🌩️ Cosmic Storm! Mining -40% for 15 sec.");
+                }
+                storm.remove();
+            });
+            container.appendChild(storm);
+            setTimeout(() => { if (storm.parentNode) storm.remove(); }, 14000);
+        }
+
+        function spawnRealityRift(sectors, container) {
+            // Реалити-Рифт: случайное событие, может дать ресурсы или их забрать
+            if (!container) return;
+            if (container.querySelector('.reality-rift-event')) return;
+            const x = 12 + Math.random() * 76;
+            const y = 12 + Math.random() * 76;
+            const rift = document.createElement('div');
+            rift.className = 'sector reality-rift-event';
+            rift.style.position = 'absolute';
+            rift.style.left = `${x}%`;
+            rift.style.top = `${y}%`;
+            rift.style.width = '64px';
+            rift.style.height = '64px';
+            rift.style.borderRadius = '50%';
+            rift.style.background = 'radial-gradient(circle, #fff 0%, #000 45%, #ff00ff 90%, transparent 100%)';
+            rift.style.border = '2.5px solid #ff00ff';
+            rift.style.boxShadow = '0 0 30px #ff00ff, 0 0 64px #000';
+            rift.style.zIndex = 175;
+            rift.style.display = 'flex';
+            rift.style.alignItems = 'center';
+            rift.style.justifyContent = 'center';
+            rift.style.cursor = 'pointer';
+            rift.innerHTML = `<div style="text-align:center;font-size:13px;font-weight:bold;color:#fff;text-shadow:0 0 10px #ff00ff;">🌀<br>REALITY<br>RIFT</div>`;
+            rift.animate([
+                { transform: 'scale(1)', opacity: 0.90 },
+                { transform: 'scale(1.18)', opacity: 1 },
+                { transform: 'scale(1)', opacity: 0.90 }
+            ], { duration: 1800, iterations: Infinity });
+            rift.addEventListener('click', () => {
+                // 50% шанс: получить много ресурсов, 50% - потерять
+                const good = Math.random() < 0.5;
+                const base = 500 + Math.floor(Math.random() * 800);
+                if (good) {
+                    currentEnergy += base;
+                    currentMetals += Math.floor(base * 0.7);
+                    currentCrystals += Math.floor(base * 0.3);
+                    currentXSDC += 222;
+                } else {
+                    currentEnergy = Math.max(0, currentEnergy - base);
+                    currentMetals = Math.max(0, currentMetals - Math.floor(base * 0.7));
+                    currentCrystals = Math.max(0, currentCrystals - Math.floor(base * 0.3));
+                    currentXSDC = Math.max(0, currentXSDC - 111);
+                }
+                displayResources();
+                saveDataAll && saveDataAll();
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert(good ? "🌀 Reality Rift! You gained mysterious resources." : "🌀 Reality Rift! You lost resources.");
+                } else {
+                    alert(good ? "🌀 Reality Rift! You gained mysterious resources." : "🌀 Reality Rift! You lost resources.");
+                }
+                rift.remove();
+            });
+            container.appendChild(rift);
+            setTimeout(() => { if (rift.parentNode) rift.remove(); }, 12000);
+        }
+
+        function spawnRandomGalaxyEvent(sectors, container) {
+            // Случайно выбирает одно из событий (кроме cosmic mystery/hhaas)
+            const events = [
+                () => spawnCosmicStorm(sectors, container),
+                () => spawnRealityRift(sectors, container)
+            ];
+            const idx = Math.floor(Math.random() * events.length);
+            events[idx]();
+        }
+
         // === Новый initGalaxyMap с дополнительными событиями и функциями ===
         function initGalaxyMap() {
             loadUpgradeData();
@@ -1302,6 +1413,9 @@
             if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
             // === Новый: редкое появление Ххаасов ===
             if (Math.random() < 0.10) spawnHhaasEvent();
+
+            // === Новый: редкие случайные космические события ===
+            if (Math.random() < 0.12) spawnRandomGalaxyEvent(sectors, galaxyContainer);
 
             // Produce resources and update prosperity
             produceSectorResources(sectors);
