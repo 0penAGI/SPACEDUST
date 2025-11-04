@@ -2659,6 +2659,25 @@
 
         function gameLoop() {
             if (!gameRunning) return;
+            
+            // Автоматическая стрельба при удержании FIRE
+            const now = Date.now();
+            if (firePressed && now - lastShootTime >= shootCooldown) {
+                shoot();
+                lastShootTime = now;
+                
+                // Time Dilation и перегрев при автоматической стрельбе
+                if (overheatLevel < MAX_OVERHEAT) {
+                    isDilating = true;
+                    timeDilationFactor = timeDilationMax;
+                    overheatLevel += 1.5;
+                } else {
+                    isDilating = false;
+                    timeDilationFactor = 1.0;
+                }
+                fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.06);
+            }
+            
             updateOverheat(); // плавное снижение fireIntensity
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawStars(); updateStars();
@@ -2678,7 +2697,10 @@
         }
 
         // === УПРАВЛЕНИЕ ===
-        let isLeftPressed = false, isRightPressed = false, fireInterval;
+        // === УПРАВЛЕНИЕ ===
+        let isLeftPressed = false, isRightPressed = false;
+        let firePressed = false;
+        let lastShootTime = 0;
         function updateDx() {
             const currentSpeed = Date.now() < speedBoostEnd ? player.speed * 1.5 : player.speed;
             player.dx = (isRightPressed ? currentSpeed : 0) - (isLeftPressed ? currentSpeed : 0);
@@ -2687,37 +2709,18 @@
         function setRight(active) { isRightPressed = active; document.getElementById('rightBtn').classList.toggle('active', active); updateDx(); }
         // --- Time Dilation Fire/Overheat ---
         function setFire(active) {
+            firePressed = active;
             document.getElementById('fireBtn').classList.toggle('active', active);
-            clearInterval(fireInterval);
+            
             if (active) {
                 // Инициализируем аудио при первом взаимодействии
                 if (!isAudioLoaded) initAudio();
-                fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.25);
-                // Time Dilation: если не перегрето, активируем замедление времени
-                if (overheatLevel < MAX_OVERHEAT) {
-                    isDilating = true;
-                    timeDilationFactor = timeDilationMax;
-                } else {
-                    isDilating = false;
-                    timeDilationFactor = 1.0;
-                }
-                shoot();
-                fireInterval = setInterval(() => {
-                    // Перегрев увеличивается при стрельбе в режиме замедления
-                    if (isDilating) {
-                        overheatLevel += 2;
-                        if (overheatLevel >= MAX_OVERHEAT) {
-                            overheatLevel = MAX_OVERHEAT;
-                            isDilating = false;
-                            timeDilationFactor = 1.0;
-                        }
-                    } else {
-                        // Остывание, если не замедляем
-                        overheatLevel = Math.max(0, overheatLevel - 1);
-                    }
-                    fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.08);
+                // Немедленный выстрел при нажатии
+                const now = Date.now();
+                if (now - lastShootTime >= shootCooldown) {
                     shoot();
-                }, DILATED_SHOOT_COOLDOWN);
+                    lastShootTime = now;
+                }
             } else {
                 fireIntensity = 0;
                 isDilating = false;
@@ -2742,6 +2745,8 @@
         });
         fireBtn.addEventListener('touchstart', e => { e.preventDefault(); setFire(true); });
         fireBtn.addEventListener('touchend', e => { e.preventDefault(); setFire(false); });
+        fireBtn.addEventListener('touchcancel', e => { e.preventDefault(); setFire(false); });
+        fireBtn.addEventListener('mouseleave', e => { setFire(false); }); // для десктопа
         window.addEventListener('blur', () => { setLeft(false); setRight(false); setFire(false); });
 
         document.addEventListener('keydown', e => {
@@ -2790,3 +2795,4 @@
     </script>
 </body>
 </html>
+
