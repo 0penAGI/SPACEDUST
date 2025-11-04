@@ -767,6 +767,8 @@
             // Hide any shooter overlays if present
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
+            try { backgroundMusic.pause(); } catch(e) {}
+            try { galaxyMusic.play().catch(() => {}); } catch(e) {}
             initGalaxyMap();
             startMining();
         }
@@ -794,6 +796,7 @@
 
             // Воспроизвести фоновую музыку
             try { backgroundMusic.play().catch(() => {}); } catch(e) {}
+            try { galaxyMusic.pause(); galaxyMusic.currentTime = 0; } catch(e) {}
 
             // Сбросить состояния UI старт/гейм-овер (только если не в процессе игры)
             if (!gameRunning) {
@@ -1269,6 +1272,35 @@
         const backgroundMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/melody.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
+
+        // === Фоновая музыка для карты ===
+        const galaxyMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/map.mp3');
+        galaxyMusic.loop = true;
+        galaxyMusic.volume = 0.4;
+        galaxyMusic.load();
+
+        // Функции управления музыкой карты
+        function playGalaxyMusic() {
+            if (galaxyMusic.paused) {
+                galaxyMusic.play().catch(e => console.warn("Ошибка воспроизведения музыки карты:", e));
+            }
+        }
+
+        function pauseGalaxyMusic() {
+            if (!galaxyMusic.paused) {
+                galaxyMusic.pause();
+            }
+        }
+
+        // Автоматический запуск/пауза при переключении режимов
+        function switchToMapMode() {
+            playGalaxyMusic();
+            // Остальной код инициализации карты
+        }
+
+        function leaveMapMode() {
+            pauseGalaxyMusic();
+        }
 
         let shootIndex = 0;
         let explosionIndex = 0;
@@ -2185,6 +2217,7 @@
 
         function endGame() {
             try { backgroundMusic.pause(); backgroundMusic.currentTime = 0; } catch(e) {}
+            try { galaxyMusic.pause(); galaxyMusic.currentTime = 0; } catch(e) {}
             gameRunning = false;
             document.getElementById('finalScore').textContent = score;
             document.getElementById('gameOver').style.display = 'block';
