@@ -2440,13 +2440,13 @@
             baseChance: () => enemySpawnRate,
             minRate: 0,
             spawn: () => {
-                const size = 30 + Math.random() * 10;
+                const size = 30 + Math.random() * 6;
                 return {
                     x: Math.random() * (canvas.width - size),
                     y: -size,
                     width: size,
                     height: size,
-                    speed: 1.5 + Math.random() * 1.5,
+                    speed: 1.3 + Math.random() * 1.5,
                     type: 'normal'
                 };
             }
@@ -2543,20 +2543,19 @@
     }
 
     function announceStage(stage) {
-        // Optional: Announce stage to player
         if (stageAnnounced !== stage) {
             stageAnnounced = stage;
-            let msg = "";
-            switch (stage) {
-                case 2: msg = "⚡ New enemy: Code-Drone!"; break;
-                case 3: msg = "⚡ New enemy: Splitter!"; break;
-                case 4: msg = "⚡ New enemy: Tank!"; break;
-                case 5: msg = "⚡ Boss incoming after wave!"; break;
-            }
-            if (msg && typeof tg !== "undefined" && tg && tg.showAlert) tg.showAlert(msg);
+                // let msg = "";
+                // switch (stage) {
+                //     case 2: msg = "⚡ New enemy: Code-Drone!"; break;
+                //     case 3: msg = "⚡ New enemy: Splitter!"; break;
+                //     case 4: msg = "⚡ New enemy: Tank!"; break;
+                //     case 5: msg = "⚡ Boss incoming after wave!"; break;
+                // }
+                // if (msg && typeof tg !== "undefined" && tg && tg.showAlert) tg.showAlert(msg);
         }
     }
-
+        
     function spawnEnemy() {
         // 1. Increase general spawn rate over time (capped)
         if (Date.now() - lastSpawnIncrease > ENEMY_SPAWN_INCREASE_INTERVAL) {
@@ -3216,3 +3215,4 @@
     </script>
 </body>
 </html>
+
