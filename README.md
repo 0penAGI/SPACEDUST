@@ -3,7 +3,8 @@
 
 
 **TRY [GAME](http://0penagi.github.io/SPACEDUST)**
-**USE $XDUST IN [TELEGRAM](http://t.me/@ARCHITECTUREAIbot)**
+
+**USE AI $XDUST IN [TELEGRAM](http://t.me/@ARCHITECTUREAIbot)**
 
 
 ![SPACEDUST](https://img.shields.io/badge/SPACEDUST-Cosmic%20Strategy%20%26%20Shooter-00ffff?style=for-the-badge&logo=starship)  
