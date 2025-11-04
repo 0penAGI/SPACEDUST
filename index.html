@@ -792,6 +792,9 @@
             const shooterBtn = document.getElementById('shooterBtn');
             if (shooterBtn) shooterBtn.style.display = 'none';
 
+            // Воспроизвести фоновую музыку
+            try { backgroundMusic.play().catch(() => {}); } catch(e) {}
+
             // Сбросить состояния UI старт/гейм-овер (только если не в процессе игры)
             if (!gameRunning) {
                 if (lives <= 0) {
@@ -1240,6 +1243,10 @@
             new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.m4a')
         ];
 
+        const backgroundMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/melody.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
+
         let shootIndex = 0;
         let explosionIndex = 0;
         let powerupIndex = 0;
@@ -1322,6 +1329,7 @@
                 sound.load();
                 sound.volume = 0.7;
             });
+            backgroundMusic.load();
         }
 
         // Telegram WebApp
@@ -1472,7 +1480,6 @@
             const flameHeight = 10 + Math.random() * 10;
             const flameGradient = ctx.createLinearGradient(0, 0, 0, flameHeight);
             flameGradient.addColorStop(0, '#ffff00');
-            // Основное пламя
             flameGradient.addColorStop(1, '#ff8800');
             ctx.fillStyle = flameGradient;
             ctx.shadowColor = '#ffff00';
@@ -1488,15 +1495,6 @@
             ctx.lineTo(player.x + 30, player.y + player.height + flameHeight);
             ctx.closePath();
             ctx.fill();
-            // Дополнительные частицы пламени для эффекта динамики
-            for (let i = 0; i < 4; i++) {
-                const px = player.x + 10 + Math.random() * 20;
-                const py = player.y + player.height;
-                const vx = (Math.random() - 0.5) * 2;
-                const vy = Math.random() * 2 + 1;
-                const size = Math.random() * 3 + 2;
-                particles.push({ x: px, y: py, vx: vx, vy: vy, life: 15 + Math.random() * 10, size: size, color: '#ffaa00' });
-            }
             if (megaShieldStage > 0 && Date.now() < megaShieldEnd) {
                 ctx.save();
                 ctx.beginPath();
@@ -1732,23 +1730,16 @@
                 const centerX = boss.x + boss.width / 2;
                 const centerY = boss.y + boss.height;
 
-                // Веер из 9-11 пуль с небольшой случайной вариацией углов
-                const baseAngles = [-Math.PI/3, -Math.PI/4, -Math.PI/6, -Math.PI/12, 0, Math.PI/12, Math.PI/6, Math.PI/4, Math.PI/3];
-                const numExtra = Math.floor(Math.random() * 3); // 0-2 дополнительных пуль
-                const angles = baseAngles.slice();
-                for(let i=0;i<numExtra;i++) {
-                    const extraAngle = -Math.PI/3 + Math.random()*(2*Math.PI/3);
-                    angles.push(extraAngle);
-                }
-
+                // Веер из 9 пуль, углы от -60 до +60 градусов
+                const angles = [-Math.PI/3, -Math.PI/4, -Math.PI/6, -Math.PI/12, 0, Math.PI/12, Math.PI/6, Math.PI/4, Math.PI/3];
                 angles.forEach(angle => {
                     bullets.push({
                         x: centerX - 4,
                         y: centerY,
                         width: 8,
                         height: 12,
-                        speed: 5 + Math.random()*2, // небольшая вариация скорости
-                        angle: angle + (Math.random()-0.5)*0.1, // легкий разброс
+                        speed: 5,
+                        angle: angle,
                         isEnemy: true
                     });
                 });
@@ -2089,6 +2080,7 @@
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('bottomPanel').style.display = 'flex';
             gameRunning = true;
+            try { backgroundMusic.play().catch(() => {}); } catch(e) {}
             score = 0; lives = 3; bullets = []; enemies = [];
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
@@ -2096,6 +2088,7 @@
         }
 
         function endGame() {
+            try { backgroundMusic.pause(); backgroundMusic.currentTime = 0; } catch(e) {}
             gameRunning = false;
             document.getElementById('finalScore').textContent = score;
             document.getElementById('gameOver').style.display = 'block';
@@ -2115,3 +2108,4 @@
     </script>
 </body>
 </html>
+
