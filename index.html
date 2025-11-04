@@ -1320,9 +1320,11 @@
 
         
         // === Дополнительные функции для событий на галактической карте ===
-        // 1. Ресурсный астероид
+        // 1. Ресурсный астероид (обновлённая версия)
         function spawnResourceAsteroid(sectors, container) {
-            const target = sectors[Math.floor(Math.random() * sectors.length)];
+            // Выбираем случайный сектор (без специальных)
+            const candidates = sectors.filter(s => !["xdust", "xdust9999", "mission"].includes(s.type));
+            const target = candidates[Math.floor(Math.random() * candidates.length)];
             const asteroid = document.createElement('div');
             asteroid.className = 'sector asteroid-event';
             asteroid.style.position = 'absolute';
@@ -1334,17 +1336,25 @@
             asteroid.style.border = '2px solid #ffaa00';
             asteroid.style.boxShadow = '0 0 20px #ffaa00, 0 0 60px #ffaa00';
             asteroid.style.zIndex = 100;
-            asteroid.innerHTML = '<div style="text-align:center;font-size:10px;color:#ffaa00;">🪨 АСТЕРОИД<br>+XDUST</div>';
+            asteroid.innerHTML = '<div style="text-align:center;font-size:10px;color:#ffaa00;">🪨 АСТЕРОИД<br>+РЕСУРСЫ</div>';
             asteroid.addEventListener('click', () => {
-                updateGalaxyResources(400 + Math.floor(Math.random() * 400));
+                // Добавляем разные ресурсы
+                const base = 400 + Math.floor(Math.random() * 400);
+                currentEnergy += base;
+                currentMetals += Math.floor(base * 0.7);
+                currentCrystals += Math.floor(base * 0.25);
+                displayResources();
+                saveDataAll && saveDataAll();
                 asteroid.remove();
-                if (tg && tg.showAlert) tg.showAlert("🪨 Собран ресурсный астероид!");
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert("🪨 Собран ресурсный астероид! Получено ресурсов.");
+                }
             });
             container.appendChild(asteroid);
             setTimeout(() => asteroid.remove(), 11000);
         }
 
-        // 2. Вражеский рейд
+        // 2. Вражеский рейд (обновлённая версия)
         function enemyRaid(sectors, container) {
             const targets = sectors.filter(s => s.type === 'controlled');
             if (targets.length === 0) return;
@@ -1360,19 +1370,29 @@
             raid.style.border = '2px dashed #ff2222';
             raid.style.boxShadow = '0 0 30px #ff2222';
             raid.style.zIndex = 110;
-            raid.innerHTML = '<div style="text-align:center;font-size:10px;color:#fff;">⚔️ РЕЙД<br>-XDUST</div>';
+            raid.innerHTML = '<div style="text-align:center;font-size:10px;color:#fff;">⚔️ РЕЙД<br>-РЕСУРСЫ</div>';
             raid.addEventListener('click', () => {
-                updateGalaxyResources(-250 - Math.floor(Math.random() * 200));
+                // Снимаем часть ресурсов (равномерно)
+                const loss = 250 + Math.floor(Math.random() * 200);
+                currentEnergy = Math.max(0, currentEnergy - loss);
+                currentMetals = Math.max(0, currentMetals - Math.floor(loss * 0.6));
+                currentCrystals = Math.max(0, currentCrystals - Math.floor(loss * 0.2));
+                displayResources();
+                saveDataAll && saveDataAll();
                 raid.remove();
-                if (tg && tg.showAlert) tg.showAlert("⚔️ Отражён вражеский рейд!");
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert("⚔️ Отражён вражеский рейд! Ресурсы уменьшены.");
+                }
             });
             container.appendChild(raid);
             setTimeout(() => raid.remove(), 9000);
         }
 
-        // 3. Торговое предложение
+        // 3. Торговое предложение (обновлённая версия)
         function offerTrade(sectors, container) {
-            const target = sectors[Math.floor(Math.random() * sectors.length)];
+            // Выбираем случайный сектор (без специальных)
+            const candidates = sectors.filter(s => !["xdust", "xdust9999", "mission"].includes(s.type));
+            const target = candidates[Math.floor(Math.random() * candidates.length)];
             const trade = document.createElement('div');
             trade.className = 'sector trade-event';
             trade.style.position = 'absolute';
@@ -1384,20 +1404,35 @@
             trade.style.border = '2px solid #00ffaa';
             trade.style.boxShadow = '0 0 20px #00ffaa';
             trade.style.zIndex = 120;
-            trade.innerHTML = '<div style="text-align:center;font-size:10px;color:#00ffaa;">🤝 ТОРГОВЛЯ<br>+/-XDUST</div>';
+            trade.innerHTML = '<div style="text-align:center;font-size:10px;color:#00ffaa;">🤝 ТОРГОВЛЯ<br>+/-РЕСУРСЫ</div>';
             trade.addEventListener('click', () => {
-                const gain = Math.random() < 0.5 ? 200 : -150;
-                updateGalaxyResources(gain);
+                // Случайный обмен: либо прибыль, либо убыток
+                const isGood = Math.random() < 0.5;
+                if (isGood) {
+                    currentEnergy += 200;
+                    currentMetals += 90;
+                    currentCrystals += 35;
+                } else {
+                    currentEnergy = Math.max(0, currentEnergy - 140);
+                    currentMetals = Math.max(0, currentMetals - 60);
+                    currentCrystals = Math.max(0, currentCrystals - 15);
+                }
+                displayResources();
+                saveDataAll && saveDataAll();
                 trade.remove();
-                if (tg && tg.showAlert) tg.showAlert(gain > 0 ? "🤝 Удачная сделка!" : "🤝 Неудачная сделка!");
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert(isGood ? "🤝 Удачная сделка! Получено ресурсов." : "🤝 Неудачная сделка! Ресурсы потеряны.");
+                }
             });
             container.appendChild(trade);
             setTimeout(() => trade.remove(), 8000);
         }
 
-        // 4. Сигнал бедствия
+        // 4. Сигнал бедствия (обновлённая версия)
         function triggerDistressSignal(sectors, container) {
-            const target = sectors[Math.floor(Math.random() * sectors.length)];
+            // Случайный сектор (без специальных)
+            const candidates = sectors.filter(s => !["xdust", "xdust9999", "mission"].includes(s.type));
+            const target = candidates[Math.floor(Math.random() * candidates.length)];
             const distress = document.createElement('div');
             distress.className = 'sector distress-event';
             distress.style.position = 'absolute';
@@ -1409,21 +1444,35 @@
             distress.style.border = '2px solid #ff00ff';
             distress.style.boxShadow = '0 0 18px #ff00ff';
             distress.style.zIndex = 130;
-            distress.innerHTML = '<div style="text-align:center;font-size:10px;color:#ff00ff;">🆘 СИГНАЛ<br>+/-XDUST</div>';
+            distress.innerHTML = '<div style="text-align:center;font-size:10px;color:#ff00ff;">🆘 СИГНАЛ<br>+/-РЕСУРСЫ</div>';
             distress.addEventListener('click', () => {
-                const gain = Math.random() < 0.7 ? 150 : -120;
-                updateGalaxyResources(gain);
+                // 70% шанс получить ресурсы, 30% - потерять
+                const isRescue = Math.random() < 0.7;
+                if (isRescue) {
+                    currentEnergy += 150;
+                    currentMetals += 60;
+                    currentCrystals += 18;
+                } else {
+                    currentEnergy = Math.max(0, currentEnergy - 120);
+                    currentMetals = Math.max(0, currentMetals - 50);
+                    currentCrystals = Math.max(0, currentCrystals - 10);
+                }
+                displayResources();
+                saveDataAll && saveDataAll();
                 distress.remove();
-                if (tg && tg.showAlert) tg.showAlert(gain > 0 ? "🆘 Спасён корабль!" : "🆘 Корабль не удалось спасти!");
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert(isRescue ? "🆘 Спасён корабль! Получены ресурсы." : "🆘 Корабль не удалось спасти! Ресурсы потеряны.");
+                }
             });
             container.appendChild(distress);
             setTimeout(() => distress.remove(), 7000);
         }
 
-        // 5. Построить оборону
+        // 5. Построить оборону (обновлённая версия)
         function buildDefense(sectors, container) {
-            const target = sectors.filter(s => s.type === 'controlled')[Math.floor(Math.random() * sectors.filter(s => s.type === 'controlled').length)];
-            if (!target) return;
+            const controlled = sectors.filter(s => s.type === 'controlled');
+            if (controlled.length === 0) return;
+            const target = controlled[Math.floor(Math.random() * controlled.length)];
             const defense = document.createElement('div');
             defense.className = 'sector defense-event';
             defense.style.position = 'absolute';
@@ -1439,11 +1488,19 @@
             defense.addEventListener('click', () => {
                 if (currentEnergy > 300) {
                     currentEnergy -= 300;
+                    // Бонус: временно повышаем доход с майнинга
+                    if (!window._defenseBonus) window._defenseBonus = 0;
+                    window._defenseBonus += 0.05;
+                    setTimeout(() => { window._defenseBonus -= 0.05; }, 15000);
                     displayResources();
-                    saveDataAll();
-                    if (tg && tg.showAlert) tg.showAlert("🛡️ Оборона построена!");
+                    saveDataAll && saveDataAll();
+                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                        tg.showAlert("🛡️ Оборона построена! Майнинг ускорен на 15 сек.");
+                    }
                 } else {
-                    if (tg && tg.showAlert) tg.showAlert("Недостаточно энергии для обороны!");
+                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                        tg.showAlert("Недостаточно энергии для обороны!");
+                    }
                 }
                 defense.remove();
             });
