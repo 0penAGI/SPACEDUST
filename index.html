@@ -553,7 +553,7 @@
         <!-- Unified Bottom Button -->
         <div id="bottomPanel-galaxy" style="position: fixed; bottom: 0; right: 20px; z-index: 100; padding-bottom: 20px;">
             <button id="shooterBtn" class="control-btn" onclick="switchToShooter()">🎮</button>
-        </div>
+        </div>```````````````````````````````
     </div>
 
     <script>
@@ -2429,92 +2429,119 @@
         }
 
 
-        function spawnEnemy() {
-            // 1. Увеличение общей скорости спавна (логика сохраняется)
-            if (Date.now() - lastSpawnIncrease > 15000) {
-                // Увеличиваем базовую скорость, но не выше 0.1
-                enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.1);
-                lastSpawnIncrease = Date.now();
-            }
-
-            // 2. Спавн обычных врагов (Normal)
-            if (Math.random() < enemySpawnRate) {
-                const size = 30 + Math.random() * 10;
-                enemies.push({
-                    x: Math.random() * (canvas.width - size),
-                    y: -size,
-                    width: size,
-                    height: size,
-                    speed: 1.5 + Math.random() * 1.5,
-                    type: 'normal'
-                });
-            }
-
-            // --- Усложненный Спавн Элитных Врагов ---
-            // Используем динамический шанс, основанный на enemySpawnRate
-
-            // Кодовый Дрон (Code Drone) - Быстрый враг
-            const codeDroneChance = 0.01 + (enemySpawnRate * 0.1);
-            if (enemySpawnRate >= 0.01 && Math.random() < codeDroneChance) {
-                const size = 30;
-                enemies.push({
-                    x: Math.random() * (canvas.width - size),
-                    y: -size,
-                    width: size,
-                    height: size,
-                    speed: 3 + Math.random() * enemySpawnRate * 2, // Можно динамически увеличивать скорость
-                    type: 'code-drone'
-                });
-            }
-
-            // Tank Enemy (Медленный, Высокое HP)
-            const tankChance = 0.015 + (enemySpawnRate * 0.2);
-            if (enemySpawnRate >= 0.02 && Math.random() < tankChance) {
-                const size = 45;
-                enemies.push({
-                    x: Math.random() * (canvas.width - size),
-                    y: -size,
-                    width: size,
-                    height: size,
-                    speed: 0.8 + enemySpawnRate, // слегка увеличиваем скорость с ростом сложности
-                    hp: 5 + Math.floor(enemySpawnRate * 5), // HP растет с сложностью
-                    type: 'tank',
-                    color: '#888888'
-                });
-            }
-
-            // Splitter Enemy (Делится)
-            const splitterChance = 0.02 + (enemySpawnRate * 0.3);
-            if (enemySpawnRate >= 0.03 && Math.random() < splitterChance) {
-                const size = 35;
-                enemies.push({
-                    x: Math.random() * (canvas.width - size),
-                    y: -size,
-                    width: size,
-                    height: size,
-                    speed: 2 + enemySpawnRate, // немного увеличиваем скорость
-                    type: 'splitter',
-                    splitCount: 2
-                });
-            }
-
-            // 3. Спавн Босса (логика сохраняется)
-            if (!bossActive && Date.now() - bossTimer > bossInterval) {
-                bossActive = true;
-                boss = {
-                    x: canvas.width / 2 - 40,
-                    y: -90,
-                    width: 80,
-                    height: 80,
-                    speed: 1 + enemySpawnRate, // фаза движения зависит от сложности
-                    hp: 10 + Math.floor(enemySpawnRate * 10),
-                    maxhp: 10 + Math.floor(enemySpawnRate * 10),
-                    type: 'boss',
-                    shootCooldown: 2000,
-                    lastShot: 0
-                };
-            }
+        // --- Enemy Spawn System ---
+        // Constants for spawn logic
+    const ENEMY_SPAWN_INCREASE_INTERVAL = 15000;
+    const MIN_ENEMY_SPAWN_RATE = 0.01;
+    const ENEMY_TYPES = [
+    {
+        type: 'normal',
+        baseChance: () => enemySpawnRate,
+        minRate: 0,
+        spawn: () => {
+            const size = 30 + Math.random() * 10;
+            return {
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: 1.5 + Math.random() * 1.5,
+                type: 'normal'
+            };
         }
+    },
+    {
+        type: 'code-drone',
+        baseChance: () => 0.01 + (enemySpawnRate * 0.1),
+        minRate: 0.01,
+        spawn: () => {
+            const size = 30;
+            return {
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: 3 + Math.random() * enemySpawnRate * 2,
+                type: 'code-drone'
+            };
+        }
+    },
+    {
+        type: 'tank',
+        baseChance: () => 0.015 + (enemySpawnRate * 0.2),
+        minRate: 0.02,
+        spawn: () => {
+            const size = 45;
+            return {
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: 0.8 + enemySpawnRate,
+                hp: 5 + Math.floor(enemySpawnRate * 5),
+                type: 'tank',
+                color: '#888888'
+            };
+        }
+    },
+    {
+        type: 'splitter',
+        baseChance: () => 0.02 + (enemySpawnRate * 0.3),
+        minRate: 0.03,
+        spawn: () => {
+            const size = 35;
+            return {
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: 2 + enemySpawnRate,
+                type: 'splitter',
+                splitCount: 2
+            };
+        }
+    }
+];
+
+function spawnEnemyOfType(typeObj) {
+    // Try to spawn this enemy type based on its chance and minRate
+    if (enemySpawnRate >= typeObj.minRate && Math.random() < typeObj.baseChance()) {
+        enemies.push(typeObj.spawn());
+    }
+}
+
+function baseEliteEnemyChance() {
+    // Returns a base value for elite-type enemy spawn chances (not used directly)
+    return 0.01 + (enemySpawnRate * 0.1);
+}
+
+function spawnEnemy() {
+    // 1. Increase general spawn rate over time (capped)
+    if (Date.now() - lastSpawnIncrease > ENEMY_SPAWN_INCREASE_INTERVAL) {
+        enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.1);
+        lastSpawnIncrease = Date.now();
+    }
+    // 2. Try to spawn each enemy type
+    for (let i = 0; i < ENEMY_TYPES.length; i++) {
+        spawnEnemyOfType(ENEMY_TYPES[i]);
+    }
+    // 3. Boss spawn logic (remains unchanged)
+    if (!bossActive && Date.now() - bossTimer > bossInterval) {
+        bossActive = true;
+        boss = {
+            x: canvas.width / 2 - 40,
+            y: -90,
+            width: 80,
+            height: 80,
+            speed: 1 + enemySpawnRate,
+            hp: 10 + Math.floor(enemySpawnRate * 10),
+            maxhp: 10 + Math.floor(enemySpawnRate * 10),
+            type: 'boss',
+            shootCooldown: 2000,
+            lastShot: 0
+        };
+    }
+}
 
         // === Code Drone movement & destruction ===
         function updateCodeDrone(drone, time) {
