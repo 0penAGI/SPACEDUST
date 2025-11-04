@@ -2464,6 +2464,34 @@
                     type: 'code-drone'
                 });
             }
+            // Tank Enemy (Slow, High HP)
+            if (Math.random() < 0.015) {
+                const size = 45;
+                enemies.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    width: size,
+                    height: size,
+                    speed: 0.8,
+                    hp: 5,
+                    type: 'tank',
+                    color: '#888888'
+                });
+            }
+
+            // Splitter Enemy
+            if (Math.random() < 0.02) {
+                const size = 35;
+                enemies.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    width: size,
+                    height: size,
+                    speed: 2,
+                    type: 'splitter',
+                    splitCount: 2
+                });
+            }
             if (!bossActive && Date.now() - bossTimer > bossInterval) {
                 bossActive = true;
                 boss = {
@@ -2684,49 +2712,60 @@
             }
         }
 
-        function checkCollisions() {
-            const bulletsToRemove = [];
-            const enemiesToRemove = [];
-            const powerUpsToCreate = [];
+function checkCollisions() {
+    const bulletsToRemove = [];
+    const enemiesToRemove = [];
+    const powerUpsToCreate = [];
 
-            for (let b = 0; b < bullets.length; b++) {
-                const bullet = bullets[b];
-                for (let e = 0; e < enemies.length; e++) {
-                    const enemy = enemies[e];
-                    if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x && bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
-                        bulletsToRemove.push(b);
+    for (let b = 0; b < bullets.length; b++) {
+        const bullet = bullets[b];
+        for (let e = 0; e < enemies.length; e++) {
+            const enemy = enemies[e];
+            if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x && bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
+                // --- NEW LOGIC ---
+                if (enemy.type === 'tank') {
+                    const dmg = UPGRADE_DATA.bulletDamage.effect(upgradeLevels.bulletDamage);
+                    enemy.hp -= dmg;
+                    createParticles(bullet.x + bullet.width/2, bullet.y + bullet.height/2, '#888888', 6);
+                    score += Math.round(10 * dmg);
+                    updateUI();
+                    if (enemy.hp <= 0) {
                         enemiesToRemove.push(e);
                         createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
                         powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
-                        // Апгрейд урона и очков
-                        const dmg = UPGRADE_DATA.bulletDamage.effect(upgradeLevels.bulletDamage);
-                        score += Math.round(10 * dmg);
-                        updateUI();
-                        if (enemy.type === 'code-drone') destroyCodeDrone(enemy);
-                        break;
                     }
-                }
-            }
-
-            for (let e = 0; e < enemies.length; e++) {
-                const enemy = enemies[e];
-                if (player.x < enemy.x + enemy.width && player.x + player.width > enemy.x && player.y < enemy.y + enemy.height && player.y + player.height > enemy.y) {
+                } else {
                     enemiesToRemove.push(e);
                     createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
-                    if (megaShieldStage > 0 && Date.now() < megaShieldEnd) {
-                        megaShieldStage--;
-                        if (megaShieldStage === 0) megaShieldEnd = 0;
-                    } else if (shieldActive) {
-                        shieldActive = false;
-                    } else {
-                        lives--;
-                        player.isDamaged = true;
-                        player.damageTime = Date.now();
-                    }
-                    updateUI();
-                    if (lives <= 0) endGame();
+                    powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
+                    if (enemy.type === 'splitter') splitEnemy(enemy);
+                    if (enemy.type === 'code-drone') destroyCodeDrone(enemy);
                 }
+                bulletsToRemove.push(b);
+                break;
             }
+        }
+    }
+
+    for (let e = 0; e < enemies.length; e++) {
+        const enemy = enemies[e];
+        if (player.x < enemy.x + enemy.width && player.x + player.width > enemy.x && player.y < enemy.y + enemy.height && player.y + player.height > enemy.y) {
+            enemiesToRemove.push(e);
+            createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
+            if (megaShieldStage > 0 && Date.now() < megaShieldEnd) {
+                megaShieldStage--;
+                if (megaShieldStage === 0) megaShieldEnd = 0;
+            } else if (shieldActive) {
+                shieldActive = false;
+            } else {
+                lives--;
+                player.isDamaged = true;
+                player.damageTime = Date.now();
+            }
+            updateUI();
+            if (lives <= 0) endGame();
+        }
+    }
 
             if (bossActive && boss) {
                 for (let b = 0; b < bullets.length; b++) {
@@ -2768,10 +2807,10 @@
                 }
             }
 
-            bulletsToRemove.sort((a, b) => b - a).forEach(idx => bullets.splice(idx, 1));
-            enemiesToRemove.sort((a, b) => b - a).forEach(idx => enemies.splice(idx, 1));
-            powerUpsToCreate.forEach(pos => createPowerUp(pos.x, pos.y));
-        }
+    bulletsToRemove.sort((a, b) => b - a).forEach(idx => bullets.splice(idx, 1));
+    enemiesToRemove.sort((a, b) => b - a).forEach(idx => enemies.splice(idx, 1));
+    powerUpsToCreate.forEach(pos => createPowerUp(pos.x, pos.y));
+}
 
         function updateUI() {
             document.getElementById('score').textContent = score;
@@ -2816,6 +2855,32 @@
             ctx.restore();
         }
 
+        function drawTankEnemy(enemy) {
+            ctx.save();
+            ctx.fillStyle = enemy.color || '#888888';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ffffff';
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            // HP bar
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(enemy.x, enemy.y - 8, enemy.width, 4);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(enemy.x, enemy.y - 8, enemy.width * (enemy.hp / 5), 4);
+            ctx.restore();
+        }
+
+        function splitEnemy(enemy) {
+            for (let i = 0; i < enemy.splitCount; i++) {
+                enemies.push({
+                    x: enemy.x + (Math.random() - 0.5) * 40,
+                    y: enemy.y,
+                    width: enemy.width * 0.6,
+                    height: enemy.height * 0.6,
+                    speed: enemy.speed * 1.5,
+                    type: 'mini-splitter'
+                });
+            }
+        }
         // === Visual Glitch & Code Explosion Particle Effects ===
         function createVisualGlitch(x, y) {
             for (let i = 0; i < 12; i++) {
@@ -2856,6 +2921,7 @@
             bullets.forEach(drawBullet); updateBullets();
             enemies.forEach(enemy => {
                 if (enemy.type === 'code-drone') drawCodeDrone(enemy);
+                else if (enemy.type === 'tank') drawTankEnemy(enemy);
                 else drawEnemy(enemy);
             }); updateEnemies(); spawnEnemy();
             if (bossActive && boss) drawBoss(boss);
