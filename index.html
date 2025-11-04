@@ -440,13 +440,15 @@
             
             <div id="fireBtn" class="control-btn">FIRE</div>
         </div>
+
         <div id="leftZone"></div>
         <div id="rightZone"></div>
     </div>
-    
+
+    <!-- Galaxy Map -->
     <div id="galaxyContainer">
         <div class="sirius-dust">✨ XDUST FROM SIRIUS! ✨</div>
-
+        
         <div class="resources-panel">
             <h3>XDUST Resources</h3>
             <div>⚡ Energy: <span id="energy">1500</span></div>
@@ -2449,7 +2451,7 @@
                 };
             }
         },
-        {z
+        {
             type: 'code-drone',
             // Lower initial chance for first wave
             baseChance: () => Math.max(0.002, 0.004 + (enemySpawnRate * 0.08)),
