@@ -1048,6 +1048,17 @@
                     requiredEnergy: 3000
                 }
             ];
+            // Новый сектор: $XDUST-9999 с анимацией и интерактивностью
+            const xdust9999Sector = {
+                id: 9999,
+                x: 75,
+                y: 85,
+                name: "$XDUST-9999",
+                type: "xdust9999",
+                resources: 9999,
+                description: "СЕКРЕТНЫЙ СЕКТОР",
+            };
+            sectors.push(xdust9999Sector);
 
             // Создаем секторы на карте
             sectors.forEach(sector => {
@@ -1103,6 +1114,44 @@
                             }
                         }
                     });
+                } else if (sector.type === "xdust9999") {
+                    // Новый сектор $XDUST-9999
+                    sectorElement.className = "sector xdust9999-sector";
+                    sectorElement.style.left = `${sector.x}%`;
+                    sectorElement.style.top = `${sector.y}%`;
+                    sectorElement.innerHTML = `
+                        <div style="text-align:center; font-size:13px;">
+                            <strong style="color:#ff2222; text-shadow:0 0 12px #ff2222;">${sector.name}</strong><br>
+                            <span style="color:#ff5555;">${sector.description}</span><br>
+                            <span style="color:#ff2222;">⚡${sector.resources}</span>
+                        </div>
+                    `;
+                    // Добавим анимацию красного свечения и "хвоста"
+                    sectorElement.style.boxShadow = "0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222";
+                    sectorElement.style.background = "radial-gradient(circle at 55% 60%, #ff3333 0%, #990000 70%, transparent 100%)";
+                    sectorElement.style.border = "3px solid #ff2222";
+                    sectorElement.style.animation = "xdust9999-glow 1.3s infinite alternate";
+                    sectorElement.style.zIndex = 11;
+                    // Добавим визуальный хвост (CSS)
+                    let tail = document.createElement('div');
+                    tail.style.position = 'absolute';
+                    tail.style.left = '50%';
+                    tail.style.top = '100%';
+                    tail.style.transform = 'translateX(-50%)';
+                    tail.style.width = '18px';
+                    tail.style.height = '80px';
+                    tail.style.background = 'linear-gradient(180deg, rgba(255,0,0,0.7) 0%, rgba(255,0,0,0.1) 100%)';
+                    tail.style.borderRadius = '50% 50% 70% 70%/30% 30% 100% 100%';
+                    tail.style.filter = 'blur(2.7px)';
+                    tail.style.pointerEvents = 'none';
+                    tail.style.zIndex = 10;
+                    tail.style.opacity = "0.85";
+                    tail.className = "xdust9999-tail";
+                    sectorElement.appendChild(tail);
+                    // Обработчик клика
+                    sectorElement.addEventListener('click', () => {
+                        handleXDUSTEncounter(sector);
+                    });
                 } else {
                     sectorElement.className = `sector ${sector.type}`;
                     sectorElement.style.left = `${sector.x}%`;
@@ -1137,6 +1186,19 @@
                 }
                 galaxyContainer.appendChild(sectorElement);
             });
+            // Добавим CSS-анимацию для сектора $XDUST-9999 (однократно)
+            if (!document.getElementById('xdust9999-glow-style')) {
+                const style = document.createElement('style');
+                style.id = 'xdust9999-glow-style';
+                style.innerHTML = `
+                @keyframes xdust9999-glow {
+                    0% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+                    50% { box-shadow: 0 0 70px 25px #ff2222, 0 0 150px 60px #ff2222; opacity:1;}
+                    100% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+                }
+                `;
+                document.head.appendChild(style);
+            }
 
             // Создаем звездный фон (но только если нет звезд)
             if (!galaxyContainer.querySelector('.galaxy-star')) {
@@ -2320,3 +2382,57 @@
 </body>
 </html>
 
+
+        // === СЕКТОР $XDUST-9999: ВСТРЕЧА ===
+        function handleXDUSTEncounter(sector) {
+            // Визуальный эффект красного хвоста и вспышка
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            // Красный хвост: несколько "огней"
+            for (let i = 0; i < 7; i++) {
+                const tail = document.createElement('div');
+                tail.style.position = 'absolute';
+                tail.style.left = `${sector.x + (Math.random()-0.5)*2}%`;
+                tail.style.top = `${sector.y + 5 + i*6}%`;
+                tail.style.width = `${12+Math.random()*5}px`;
+                tail.style.height = `${30+Math.random()*15}px`;
+                tail.style.background = 'linear-gradient(180deg, rgba(255,0,0,0.7) 0%, rgba(255,0,0,0.0) 100%)';
+                tail.style.borderRadius = '50% 50% 70% 70%/40% 40% 100% 100%';
+                tail.style.filter = 'blur(2.2px)';
+                tail.style.opacity = "0.7";
+                tail.style.pointerEvents = 'none';
+                tail.style.zIndex = 9;
+                galaxyContainer.appendChild(tail);
+                setTimeout(()=>tail.remove(), 1200 + i*80);
+            }
+            // Вспышка
+            const burst = document.createElement('div');
+            burst.style.position = 'absolute';
+            burst.style.left = `${sector.x}%`;
+            burst.style.top = `${sector.y}%`;
+            burst.style.width = '140px';
+            burst.style.height = '140px';
+            burst.style.borderRadius = '50%';
+            burst.style.background = 'radial-gradient(circle, rgba(255,0,0,0.7), transparent 70%)';
+            burst.style.transform = 'translate(-50%, -50%)';
+            burst.style.pointerEvents = 'none';
+            burst.style.zIndex = 12;
+            burst.style.animation = 'burstFade 1.5s ease-out forwards';
+            galaxyContainer.appendChild(burst);
+            setTimeout(() => burst.remove(), 1500);
+            // Звук (выстрел или powerup)
+            if (typeof playPowerup === 'function') playPowerup();
+            // Бонус $XSDC
+            const xsdcReward = 9999;
+            currentXSDC += xsdcReward;
+            displayResources();
+            saveDataAll && saveDataAll();
+            // Сообщение
+            if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                tg.showAlert(`🔥 СЕКРЕТНЫЙ СЕКТОР $XDUST-9999! Бонус: +${xsdcReward} $XSDC`);
+            } else {
+                alert(`🔥 СЕКРЕТНЫЙ СЕКТОР $XDUST-9999! Бонус: +${xsdcReward} $XSDC`);
+            }
+            // Перевести сектор в controlled и обновить карту
+            sector.type = 'controlled';
+            setTimeout(initGalaxyMap, 800);
+        }
