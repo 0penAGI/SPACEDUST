@@ -931,7 +931,7 @@
             lives = UPGRADE_DATA.hull.effect(upgradeLevels.hull);
             applyUpgradeEffects();
             gameRunning = true;
-            enemySpawnRate = 0.03;
+            enemySpawnRate = 0.01;
             bossInterval = 45000;
             // Chance for cosmic alien boss
             if (Math.random() < 0.11) {
@@ -1386,6 +1386,73 @@
             events[idx]();
         }
 
+        // === CHAOS PULSE SYSTEM ===
+        let chaosPulseActive = false;
+
+        function startChaosPulse() {
+            if (chaosPulseActive) return;
+            chaosPulseActive = true;
+
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            if (!galaxyContainer) return;
+
+            setInterval(() => {
+                // 1. Ripple the stars
+                const stars = document.getElementById('stars');
+                if (stars) {
+                    stars.style.transition = 'transform 1.5s ease';
+                    stars.style.transform = `scale(${1 + Math.random() * 0.04}) rotate(${Math.random()*2}deg)`;
+                }
+
+                // 2. Warp sectors
+                Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(sector => {
+                    sector.style.transition = 'transform 1.8s ease, left 1.8s ease, top 1.8s ease, filter 1.8s ease';
+                    const dx = (Math.random() - 0.5) * 3; // shift X by a few %
+                    const dy = (Math.random() - 0.5) * 3; // shift Y by a few %
+                    const currentX = parseFloat(sector.style.left);
+                    const currentY = parseFloat(sector.style.top);
+                    sector.style.left = `${Math.min(100, Math.max(0, currentX + dx))}%`;
+                    sector.style.top = `${Math.min(100, Math.max(0, currentY + dy))}%`;
+
+                    // Glitch the visual
+                    sector.style.filter = `hue-rotate(${Math.random()*360}deg) brightness(${0.9+Math.random()*0.2})`;
+                    sector.style.transform = `scale(${1 + (Math.random()-0.5)*0.15}) rotate(${(Math.random()-0.5)*10}deg)`;
+                });
+
+                // 3. Glitch enemies in shooter mode
+                if(gameRunning && enemies.length > 0) {
+                    enemies.forEach(enemy => {
+                        enemy.x += (Math.random()-0.5)*5;
+                        enemy.y += (Math.random()-0.5)*5;
+                        enemy.vx += (Math.random()-0.5)*0.2;
+                        enemy.vy += (Math.random()-0.5)*0.2;
+                    });
+                }
+
+                // 4. Random resource glitches
+                if(Math.random() < 0.05) {
+                    const chaosEnergy = 100 + Math.floor(Math.random() * 300);
+                    currentEnergy += chaosEnergy;
+                    currentMetals += Math.floor(chaosEnergy * 0.7);
+                    currentCrystals += Math.floor(chaosEnergy * 0.4);
+                    currentXSDC += 50 + Math.floor(Math.random() * 150);
+                    displayResources();
+                    saveDataAll && saveDataAll();
+                }
+
+                // 5. Flicker the background
+                galaxyContainer.style.backgroundPosition = `${Math.random()*1000}px ${Math.random()*1000}px`;
+
+            }, 2000); // every 2 seconds, the galaxy pulses
+        }
+
+        // Hook chaos pulse into galaxy switch
+        const originalSwitchToGalaxy = switchToGalaxy;
+        switchToGalaxy = function(...args) {
+            originalSwitchToGalaxy(...args);
+            startChaosPulse();
+        };
+        
         // === Новый initGalaxyMap с дополнительными событиями и функциями ===
         function initGalaxyMap() {
             loadUpgradeData();
