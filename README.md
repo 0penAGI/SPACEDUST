@@ -1,7 +1,11 @@
 
 # SPACEDUST - Cosmic Strategy & Space Shooter  
+
+
 **TRY [GAME](http://0penagi.github.io/SPACEDUST)**
 **USE $XDUST IN [TELEGRAM](http://t.me/@ARCHITECTUREAIbot)**
+
+
 ![SPACEDUST](https://img.shields.io/badge/SPACEDUST-Cosmic%20Strategy%20%26%20Shooter-00ffff?style=for-the-badge&logo=starship)  
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)  
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)  
