@@ -1935,135 +1935,135 @@
             }
         }
 
-// === КОСМИЧЕСКИЙ ШУТЕР ===
-// === ЗВУКИ: ПУЛ ДЛЯ ДИНАМИЧНОЙ ИГРЫ ===
-const shootSounds = [
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg'),
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.mp3'),
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.m4a')
-];
-const explosionSounds = [
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.ogg'),
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.mp3'),
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.m4a')
-];
-const powerupSounds = [
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.ogg'),
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.mp3'),
-    new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.m4a')
-];
+        // === КОСМИЧЕСКИЙ ШУТЕР ===
+        // === ЗВУКИ: ПУЛ ДЛЯ ДИНАМИЧНОЙ ИГРЫ ===
+        const shootSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.m4a')
+        ];
+        const explosionSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/explosion.m4a')
+        ];
+        const powerupSounds = [
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.ogg'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.mp3'),
+            new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/powerup.m4a')
+        ];
 
-const backgroundMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/melody.mp3');
-backgroundMusic.loop = true;
-backgroundMusic.volume = 0.5;
+        const backgroundMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/melody.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
 
-const galaxyMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/map.mp3');
-galaxyMusic.loop = true;
-galaxyMusic.volume = 0.4;
-galaxyMusic.load();
+        const galaxyMusic = new Audio('https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/map.mp3');
+        galaxyMusic.loop = true;
+        galaxyMusic.volume = 0.4;
+        galaxyMusic.load();
 
-function playGalaxyMusic() {
-    if (galaxyMusic.paused) galaxyMusic.play().catch(e => console.warn("Ошибка воспроизведения музыки карты:", e));
-}
-function pauseGalaxyMusic() {
-    if (!galaxyMusic.paused) galaxyMusic.pause();
-}
+        function playGalaxyMusic() {
+            if (galaxyMusic.paused) galaxyMusic.play().catch(e => console.warn("Ошибка воспроизведения музыки карты:", e));
+        }
+        function pauseGalaxyMusic() {
+            if (!galaxyMusic.paused) galaxyMusic.pause();
+        }
 
-let shootIndex = 0, explosionIndex = 0, powerupIndex = 0;
+        let shootIndex = 0, explosionIndex = 0, powerupIndex = 0;
 
-// === Web Audio API Enhanced ===
-let audioContext = null;
-let shootBuffer = null;
-let isAudioLoaded = false;
-let fireIntensity = 0;
-const MAX_INTENSITY = 1.0;
-const shootSoundPath = "https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg";
+        // === Web Audio API Enhanced ===
+        let audioContext = null;
+        let shootBuffer = null;
+        let isAudioLoaded = false;
+        let fireIntensity = 0;
+        const MAX_INTENSITY = 1.0;
+        const shootSoundPath = "https://raw.githubusercontent.com/0penAGI/SPACEDUST/main/shoot.ogg";
 
-function initAudio() {
-    if (isAudioLoaded) return;
-    try { audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+        function initAudio() {
+            if (isAudioLoaded) return;
+            try { audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
 
-    fetch(shootSoundPath)
-        .then(r => r.arrayBuffer())
-        .then(b => audioContext.decodeAudioData(b))
-        .then(buffer => { shootBuffer = buffer; isAudioLoaded = true; });
-}
+            fetch(shootSoundPath)
+                .then(r => r.arrayBuffer())
+                .then(b => audioContext.decodeAudioData(b))
+                .then(buffer => { shootBuffer = buffer; isAudioLoaded = true; });
+        }
 
-function playShoot() {
-    if (audioContext && shootBuffer && isAudioLoaded) {
-        try {
-            const src = audioContext.createBufferSource();
-            src.buffer = shootBuffer;
+        function playShoot() {
+            if (audioContext && shootBuffer && isAudioLoaded) {
+                try {
+                    const src = audioContext.createBufferSource();
+                    src.buffer = shootBuffer;
 
-            // Pitch variation
-            let morph = Math.min(1, Math.max(0, fireIntensity / MAX_INTENSITY));
-            src.playbackRate.value = 1.0 + morph * 0.25 + (Math.random() - 0.5) * 0.05;
+                    // Pitch variation
+                    let morph = Math.min(1, Math.max(0, fireIntensity / MAX_INTENSITY));
+                    src.playbackRate.value = 1.0 + morph * 0.25 + (Math.random() - 0.5) * 0.05;
 
-            // Gain
-            const gain = audioContext.createGain();
-            gain.gain.value = 0.4 + morph * 0.4;
+                    // Gain
+                    const gain = audioContext.createGain();
+                    gain.gain.value = 0.4 + morph * 0.4;
 
-            // Stereo panner
-            const pan = audioContext.createStereoPanner();
-            pan.pan.value = (Math.random() - 0.5) * morph * 2;
+                    // Stereo panner
+                    const pan = audioContext.createStereoPanner();
+                    pan.pan.value = (Math.random() - 0.5) * morph * 2;
 
-            src.connect(gain).connect(pan).connect(audioContext.destination);
+                    src.connect(gain).connect(pan).connect(audioContext.destination);
 
-            // Short granular slice
-            const duration = Math.max(0.08, 0.12 + morph * 0.04);
-            const offset = Math.random() * (shootBuffer.duration - duration - 0.01);
-            src.start(0, offset, duration);
-        } catch (e) { fallbackShoot(); }
-    } else { fallbackShoot(); }
-}
+                    // Short granular slice
+                    const duration = Math.max(0.08, 0.12 + morph * 0.04);
+                    const offset = Math.random() * (shootBuffer.duration - duration - 0.01);
+                    src.start(0, offset, duration);
+                } catch (e) { fallbackShoot(); }
+            } else { fallbackShoot(); }
+        }
 
-function fallbackShoot() {
-    const s = shootSounds[shootIndex];
-    s.currentTime = 0;
-    s.play().catch(() => {});
-    shootIndex = (shootIndex + 1) % shootSounds.length;
-}
+        function fallbackShoot() {
+            const s = shootSounds[shootIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            shootIndex = (shootIndex + 1) % shootSounds.length;
+        }
 
-function playExplosion() {
-    if (audioContext) {
-        const gain = audioContext.createGain();
-        gain.gain.value = 0.6;
-        const src = audioContext.createBufferSource();
-        src.buffer = shootBuffer;
-        src.playbackRate.value = 0.8 + Math.random() * 0.4;
-        src.connect(gain).connect(audioContext.destination);
-        src.start(0, 0, 0.15 + Math.random()*0.1);
-    }
-    const s = explosionSounds[explosionIndex];
-    s.currentTime = 0;
-    s.play().catch(() => {});
-    explosionIndex = (explosionIndex + 1) % explosionSounds.length;
-}
+        function playExplosion() {
+            if (audioContext) {
+                const gain = audioContext.createGain();
+                gain.gain.value = 0.6;
+                const src = audioContext.createBufferSource();
+                src.buffer = shootBuffer;
+                src.playbackRate.value = 0.8 + Math.random() * 0.4;
+                src.connect(gain).connect(audioContext.destination);
+                src.start(0, 0, 0.15 + Math.random()*0.1);
+            }
+            const s = explosionSounds[explosionIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            explosionIndex = (explosionIndex + 1) % explosionSounds.length;
+        }
 
-function playPowerup() {
-    if (audioContext) {
-        const gain = audioContext.createGain();
-        gain.gain.value = 0.6;
-        const src = audioContext.createBufferSource();
-        src.buffer = shootBuffer;
-        src.playbackRate.value = 1.0 + Math.random()*0.15;
-        src.connect(gain).connect(audioContext.destination);
-        src.start(0, 0, 0.12 + Math.random()*0.05);
-    }
-    const s = powerupSounds[powerupIndex];
-    s.currentTime = 0;
-    s.play().catch(() => {});
-    powerupIndex = (powerupIndex + 1) % powerupSounds.length;
-}
+        function playPowerup() {
+            if (audioContext) {
+                const gain = audioContext.createGain();
+                gain.gain.value = 0.6;
+                const src = audioContext.createBufferSource();
+                src.buffer = shootBuffer;
+                src.playbackRate.value = 1.0 + Math.random()*0.15;
+                src.connect(gain).connect(audioContext.destination);
+                src.start(0, 0, 0.12 + Math.random()*0.05);
+            }
+            const s = powerupSounds[powerupIndex];
+            s.currentTime = 0;
+            s.play().catch(() => {});
+            powerupIndex = (powerupIndex + 1) % powerupSounds.length;
+        }
 
-// Предзагрузка звуков
-function preloadSounds() {
-    [...shootSounds, ...explosionSounds, ...powerupSounds].forEach(sound => {
-        sound.load();
-        sound.volume = 0.7;
-    });
-    backgroundMusic.load();
-}
+        // Предзагрузка звуков
+        function preloadSounds() {
+            [...shootSounds, ...explosionSounds, ...powerupSounds].forEach(sound => {
+                sound.load();
+                sound.volume = 0.7;
+            });
+            backgroundMusic.load();
+        }
 
         // Telegram WebApp
         let tg = window.Telegram?.WebApp;
@@ -2430,10 +2430,14 @@ function preloadSounds() {
 
 
         function spawnEnemy() {
+            // 1. Увеличение общей скорости спавна (логика сохраняется)
             if (Date.now() - lastSpawnIncrease > 15000) {
+                // Увеличиваем базовую скорость, но не выше 0.1
                 enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.1);
                 lastSpawnIncrease = Date.now();
             }
+
+            // 2. Спавн обычных врагов (Normal)
             if (Math.random() < enemySpawnRate) {
                 const size = 30 + Math.random() * 10;
                 enemies.push({
@@ -2445,46 +2449,56 @@ function preloadSounds() {
                     type: 'normal'
                 });
             }
-            // Кодовый Дрон (Code Drone) — 1% шанс появления
-            if (Math.random() < 0.01) { // 1% шанс на появление Кодового Дрона
+
+            // --- Усложненный Спавн Элитных Врагов ---
+            // Используем динамический шанс, основанный на enemySpawnRate
+
+            // Кодовый Дрон (Code Drone) - Быстрый враг
+            const codeDroneChance = 0.01 + (enemySpawnRate * 0.1);
+            if (enemySpawnRate >= 0.01 && Math.random() < codeDroneChance) {
                 const size = 30;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
                     y: -size,
                     width: size,
                     height: size,
-                    speed: 3 + Math.random(),
+                    speed: 3 + Math.random() * enemySpawnRate * 2, // Можно динамически увеличивать скорость
                     type: 'code-drone'
                 });
             }
-            // Tank Enemy (Slow, High HP)
-            if (Math.random() < 0.015) {
+
+            // Tank Enemy (Медленный, Высокое HP)
+            const tankChance = 0.015 + (enemySpawnRate * 0.2);
+            if (enemySpawnRate >= 0.02 && Math.random() < tankChance) {
                 const size = 45;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
                     y: -size,
                     width: size,
                     height: size,
-                    speed: 0.8,
-                    hp: 5,
+                    speed: 0.8 + enemySpawnRate, // слегка увеличиваем скорость с ростом сложности
+                    hp: 5 + Math.floor(enemySpawnRate * 5), // HP растет с сложностью
                     type: 'tank',
                     color: '#888888'
                 });
             }
 
-            // Splitter Enemy
-            if (Math.random() < 0.02) {
+            // Splitter Enemy (Делится)
+            const splitterChance = 0.02 + (enemySpawnRate * 0.3);
+            if (enemySpawnRate >= 0.03 && Math.random() < splitterChance) {
                 const size = 35;
                 enemies.push({
                     x: Math.random() * (canvas.width - size),
                     y: -size,
                     width: size,
                     height: size,
-                    speed: 2,
+                    speed: 2 + enemySpawnRate, // немного увеличиваем скорость
                     type: 'splitter',
                     splitCount: 2
                 });
             }
+
+            // 3. Спавн Босса (логика сохраняется)
             if (!bossActive && Date.now() - bossTimer > bossInterval) {
                 bossActive = true;
                 boss = {
@@ -2492,9 +2506,9 @@ function preloadSounds() {
                     y: -90,
                     width: 80,
                     height: 80,
-                    speed: 1,
-                    hp: 10,
-                    maxhp: 10,
+                    speed: 1 + enemySpawnRate, // фаза движения зависит от сложности
+                    hp: 10 + Math.floor(enemySpawnRate * 10),
+                    maxhp: 10 + Math.floor(enemySpawnRate * 10),
                     type: 'boss',
                     shootCooldown: 2000,
                     lastShot: 0
