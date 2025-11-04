@@ -830,26 +830,126 @@
             localStorage.setItem('xdgame_upgrade_data', JSON.stringify(data));
         }
 
+        // === Enhanced Galaxy Switch & Cosmic Mystery ===
         function switchToGalaxy() {
-            // Hide shooter UI
+            // Hide shooter UI, show galaxy map
             document.getElementById('gameContainer').style.display = 'none';
             document.getElementById('galaxyContainer').style.display = 'flex';
-            // Hide shooter bottom panel/buttons
             document.getElementById('bottomPanel').style.display = 'none';
-            // Show galaxy bottom panel/button
             const galaxyPanel = document.getElementById('bottomPanel-galaxy');
             if (galaxyPanel) galaxyPanel.style.display = 'block';
-            // Hide shooter-specific controls if present
-            // Also ensure shooterBtn (if present in shooter) is hidden
             const shooterBtn = document.getElementById('shooterBtn');
             if (shooterBtn) shooterBtn.style.display = 'block';
-            // Hide any shooter overlays if present
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             try { backgroundMusic.pause(); } catch(e) {}
             try { galaxyMusic.play().catch(() => {}); } catch(e) {}
             initGalaxyMap();
             startMining();
+            // Spawn a cosmic mystery event occasionally
+            if (Math.random() < 0.16) spawnCosmicMystery();
+        }
+
+        // Spawns a rare cosmic mystery event on the galaxy map
+        function spawnCosmicMystery() {
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            if (!galaxyContainer) return;
+            // Prevent multiple at once
+            if (galaxyContainer.querySelector('.cosmic-mystery-event')) return;
+            // Place at a random location
+            const x = 15 + Math.random() * 70;
+            const y = 15 + Math.random() * 70;
+            const event = document.createElement('div');
+            event.className = 'sector cosmic-mystery-event';
+            event.style.position = 'absolute';
+            event.style.left = `${x}%`;
+            event.style.top = `${y}%`;
+            event.style.width = '74px';
+            event.style.height = '74px';
+            event.style.borderRadius = '50%';
+            event.style.background = 'radial-gradient(circle, #fff 0%, #00ffff 40%, #ff00ff 85%, transparent 100%)';
+            event.style.border = '3px double #fff';
+            event.style.boxShadow = '0 0 44px #ff00ff, 0 0 88px #00ffff';
+            event.style.zIndex = 150;
+            event.style.display = 'flex';
+            event.style.alignItems = 'center';
+            event.style.justifyContent = 'center';
+            event.style.cursor = 'pointer';
+            event.innerHTML = `<div style="text-align:center;font-size:15px;font-weight:bold;color:#fff;text-shadow:0 0 12px #00ffff;">✨<br>COSMIC<br>MYSTERY</div>`;
+            // Animate pulsating
+            event.animate([
+                { transform: 'scale(1)', opacity: 0.92 },
+                { transform: 'scale(1.12)', opacity: 1 },
+                { transform: 'scale(1)', opacity: 0.92 }
+            ], { duration: 1800, iterations: Infinity });
+            event.addEventListener('click', () => {
+                // Reward: big resource bonus + $XSDC + random effect
+                const base = 1000 + Math.floor(Math.random() * 2000);
+                currentEnergy += base;
+                currentMetals += Math.floor(base * 0.7);
+                currentCrystals += Math.floor(base * 0.4);
+                const xsdcGain = 888 + Math.floor(Math.random() * 888);
+                currentXSDC += xsdcGain;
+                displayResources();
+                saveDataAll && saveDataAll();
+                // Visual burst
+                const burst = document.createElement('div');
+                burst.style.position = 'absolute';
+                burst.style.left = event.style.left;
+                burst.style.top = event.style.top;
+                burst.style.width = '220px';
+                burst.style.height = '220px';
+                burst.style.borderRadius = '50%';
+                burst.style.background = 'radial-gradient(circle, #fff 0%, #00ffff 40%, #ff00ff 85%, transparent 100%)';
+                burst.style.transform = 'translate(-50%, -50%)';
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = 151;
+                burst.style.animation = 'burstFade 2s ease-out forwards';
+                galaxyContainer.appendChild(burst);
+                setTimeout(() => burst.remove(), 1600);
+                // Message
+                if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                    tg.showAlert(`✨ Cosmic Mystery! +${base} energy, +${xsdcGain} $XSDC & more!`);
+                } else {
+                    alert(`✨ Cosmic Mystery! +${base} energy, +${xsdcGain} $XSDC & more!`);
+                }
+                event.remove();
+            });
+            galaxyContainer.appendChild(event);
+            setTimeout(() => { if (event.parentNode) event.remove(); }, 17000);
+        }
+
+        // Enhanced startGame: supports cosmic alien boss
+        function startGame() {
+            // Hide overlays, show shooter UI
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'flex';
+            document.getElementById('bottomPanel').style.display = 'flex';
+            // Reset game state
+            score = 0;
+            lives = UPGRADE_DATA.hull.effect(upgradeLevels.hull);
+            applyUpgradeEffects();
+            gameRunning = true;
+            enemySpawnRate = 0.03;
+            bossInterval = 45000;
+            // Chance for cosmic alien boss
+            if (Math.random() < 0.11) {
+                setTimeout(() => {
+                    // Spawn a cosmic alien boss with special effects
+                    if (typeof spawnCosmicAlienBoss === 'function') {
+                        spawnCosmicAlienBoss();
+                    } else {
+                        // Fallback: show alert
+                        if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                            tg.showAlert("👾 Cosmic Alien Boss appears!");
+                        } else {
+                            alert("👾 Cosmic Alien Boss appears!");
+                        }
+                    }
+                }, 8000 + Math.random() * 12000);
+            }
+            gameLoop();
         }
 
         // Новая версия switchToShooter: поддержка динамических миссий, $XSDC и колбэка завершения миссии
