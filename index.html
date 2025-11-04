@@ -1060,18 +1060,6 @@
             };
             sectors.push(xdust9999Sector);
 
-            // Новый сектор: $XDUST с уникальной анимацией и обработчиком
-            const xdustSector = {
-                id: 42042,
-                x: 31,
-                y: 88,
-                name: "$XDUST",
-                type: "xdust",
-                resources: 4242,
-                description: "АРТЕФАКТ ГАЛАКТИКИ",
-            };
-            sectors.push(xdustSector);
-
             // Создаем секторы на карте
             sectors.forEach(sector => {
                 let sectorElement = document.createElement('div');
@@ -1160,58 +1148,6 @@
                     tail.style.opacity = "0.85";
                     tail.className = "xdust9999-tail";
                     sectorElement.appendChild(tail);
-                    // Обработчик клика
-                    sectorElement.addEventListener('click', () => {
-                        handleXDUSTEncounter(sector);
-                    });
-                } else if (sector.type === "xdust") {
-                    // Новый сектор $XDUST с уникальной анимацией и бонусом $XSDC
-                    sectorElement.className = "sector xdust-sector";
-                    sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${sector.y}%`;
-                    sectorElement.innerHTML = `
-                        <div style="text-align:center; font-size:14px;">
-                            <strong style="color:#00ffff; text-shadow:0 0 12px #00ffff;">${sector.name}</strong><br>
-                            <span style="color:#ff00ff;">${sector.description}</span><br>
-                            <span style="color:#00ffff;">⚡${sector.resources}</span>
-                        </div>
-                        <div class="xdust-anim-star" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;"></div>
-                    `;
-                    // Анимация: мерцающая звезда и пульсация
-                    sectorElement.style.boxShadow = "0 0 36px 9px #00ffff, 0 0 70px 24px #ff00ff";
-                    sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00eaff 0%, #ff00ff 70%, transparent 100%)";
-                    sectorElement.style.border = "3px solid #00ffff";
-                    sectorElement.style.animation = "xdust-glow 2.1s infinite alternate";
-                    sectorElement.style.zIndex = 13;
-                    // Добавим звезду-артефакт
-                    let star = sectorElement.querySelector('.xdust-anim-star');
-                    if (star) {
-                        star.style.width = "46px";
-                        star.style.height = "46px";
-                        star.style.borderRadius = "50%";
-                        star.style.background = "radial-gradient(circle, #fff 0%, #00ffff 60%, transparent 100%)";
-                        star.style.boxShadow = "0 0 32px 10px #00ffff, 0 0 60px 20px #ff00ff";
-                        star.style.opacity = "0.8";
-                        star.style.animation = "xdust-star-pulse 1.3s infinite alternate";
-                    }
-                    // Добавим анимацию только один раз
-                    if (!document.getElementById('xdust-glow-style')) {
-                        const style = document.createElement('style');
-                        style.id = 'xdust-glow-style';
-                        style.innerHTML = `
-                        @keyframes xdust-glow {
-                            0% { box-shadow: 0 0 36px 9px #00ffff, 0 0 70px 24px #ff00ff; opacity:0.89;}
-                            50% { box-shadow: 0 0 70px 25px #00ffff, 0 0 120px 60px #ff00ff; opacity:1;}
-                            100% { box-shadow: 0 0 36px 9px #00ffff, 0 0 70px 24px #ff00ff; opacity:0.89;}
-                        }
-                        @keyframes xdust-star-pulse {
-                            0% { opacity:0.7; transform:scale(1);}
-                            50% { opacity:1; transform:scale(1.15);}
-                            100% { opacity:0.7; transform:scale(1);}
-                        }
-                        `;
-                        document.head.appendChild(style);
-                    }
                     // Обработчик клика
                     sectorElement.addEventListener('click', () => {
                         handleXDUSTEncounter(sector);
@@ -2446,94 +2382,3 @@
 </body>
 </html>
 
-
-        // === Новый обработчик для сектора $XDUST ===
-        /**
-         * Обработка встречи с сектором $XDUST: уникальная анимация, звук, награда $XSDC
-         * @param {object} sector - объект сектора
-         */
-        function handleXDUSTEncounter(sector) {
-            // Проверяем, не был ли уже собран артефакт (можно добавить флаг в localStorage)
-            const collectedKey = 'xdust_sector_collected';
-            if (localStorage.getItem(collectedKey)) {
-                if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert("✨ Артефакт $XDUST уже собран!");
-                } else {
-                    alert("✨ Артефакт $XDUST уже собран!");
-                }
-                return;
-            }
-            // Визуальная анимация: пульсирующий всплеск и лучи
-            const galaxyContainer = document.getElementById('galaxyContainer');
-            // Центральный всплеск
-            const burst = document.createElement('div');
-            burst.style.position = 'absolute';
-            burst.style.left = `${sector.x}%`;
-            burst.style.top = `${sector.y}%`;
-            burst.style.width = '120px';
-            burst.style.height = '120px';
-            burst.style.borderRadius = '50%';
-            burst.style.background = 'radial-gradient(circle, rgba(0,255,255,0.7) 0%, rgba(255,0,255,0.3) 70%, transparent 100%)';
-            burst.style.transform = 'translate(-50%, -50%)';
-            burst.style.pointerEvents = 'none';
-            burst.style.zIndex = 100;
-            burst.style.animation = 'burstFade 1.5s ease-out forwards';
-            galaxyContainer.appendChild(burst);
-            setTimeout(() => burst.remove(), 1500);
-            // Лучи
-            for (let i = 0; i < 9; i++) {
-                const ray = document.createElement('div');
-                ray.style.position = 'absolute';
-                ray.style.left = `${sector.x}%`;
-                ray.style.top = `${sector.y}%`;
-                ray.style.width = '8px';
-                ray.style.height = '80px';
-                ray.style.background = 'linear-gradient(180deg, rgba(0,255,255,0.7) 0%, rgba(255,0,255,0.1) 100%)';
-                ray.style.borderRadius = '40%';
-                ray.style.pointerEvents = 'none';
-                ray.style.zIndex = 101;
-                ray.style.transform = `translate(-50%, -100%) rotate(${i*40}deg) scaleY(0.7)`;
-                ray.style.opacity = '0.7';
-                ray.style.animation = `xdust-ray-fade 1.3s ${i*0.07}s ease-out forwards`;
-                galaxyContainer.appendChild(ray);
-                setTimeout(() => ray.remove(), 1300 + i*70);
-            }
-            // Добавить анимацию для лучей (однократно)
-            if (!document.getElementById('xdust-ray-fade-style')) {
-                const style = document.createElement('style');
-                style.id = 'xdust-ray-fade-style';
-                style.innerHTML = `
-                @keyframes xdust-ray-fade {
-                    0% { opacity: 0.8; transform: scaleY(0.7);}
-                    70% { opacity: 1; transform: scaleY(1.2);}
-                    100% { opacity: 0; transform: scaleY(1.4);}
-                }
-                `;
-                document.head.appendChild(style);
-            }
-            // Звук: используем powerup или shoot
-            playPowerup();
-            // Награда: крупный бонус $XSDC (например, 4242) + ресурсы
-            const xsdcReward = 4242;
-            currentXSDC += xsdcReward;
-            // Доп. ресурсы
-            currentEnergy += 242;
-            currentMetals += 142;
-            currentCrystals += 42;
-            displayResources();
-            saveDataAll && saveDataAll();
-            // Сохраняем, что сектор собран
-            localStorage.setItem(collectedKey, "1");
-            // Сообщение игроку
-            setTimeout(() => {
-                if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert(`🌟 Вы собрали артефакт $XDUST!\n+${xsdcReward} $XSDC, +242⚡, +142🪐, +42💎`);
-                } else {
-                    alert(`🌟 Вы собрали артефакт $XDUST!\n+${xsdcReward} $XSDC, +242⚡, +142🪐, +42💎`);
-                }
-            }, 700);
-            // Обновить карту (чтобы убрать возможность повторного сбора)
-            setTimeout(() => {
-                initGalaxyMap();
-            }, 900);
-        }
