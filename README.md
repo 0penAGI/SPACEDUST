@@ -1,7 +1,3 @@
-
-# SPACEDUST GAME IN $XDUST AI
-**TRY [GAME](http://0penagi.github.io/SPACEDUST)**
-**USE $XDUST IN [TELEGRAM](http://t.me/@ARCHITECTUREAIbot)**
 # SPACEDUST - Space Shooter Game
 
 ![SPACEDUST](https://img.shields.io/badge/SPACEDUST-Cosmic%20Shooter-blue?style=for-the-badge&logo=starship)
@@ -23,6 +19,10 @@ SPACEDUST is an exciting space shooter game built with pure HTML5, CSS3, and Jav
 - **📱 Responsive Design**: Works perfectly on all screen sizes
 - **🔊 Sound Effects**: Immersive audio experience (requires sound files)
 - **🏆 Scoring System**: Compete for high scores
+- **🌌 Galactic Strategy Mode**: Resource management and sector control
+- **🛠️ Upgrade System**: Enhance your ship with permanent upgrades
+- **💰 XDUST Economy**: In-game currency system with mining mechanics
+- **⚡ Time Dilation**: Advanced combat mechanic with overheat system
 
 ## 🎯 Gameplay
 
@@ -85,16 +85,18 @@ spacedust/
 ## 🎮 Game Mechanics
 
 ### Player Ship
-- 3 lives at start
+- 3 lives at start (upgradable)
 - Responsive movement
 - Visual damage feedback
 - Multiple weapon types
+- Time dilation combat system
 
 ### Enemies
 - Random spawn patterns
 - Increasing difficulty over time
 - Different sizes and speeds
 - Boss enemy with health bar
+- Special Code Drone enemies
 
 ### Scoring
 - **Normal Enemy**: 10 points
@@ -110,12 +112,45 @@ spacedust/
 5. **Survive**: Avoid enemy collisions and survive as long as possible
 6. **Boss Fight**: Defeat the boss that appears every 45 seconds
 
+## 🌌 Galactic Strategy Mode
+
+The game features a comprehensive galactic strategy mode where you can:
+
+- **Manage Resources**: Collect energy, metals, and crystals
+- **Control Sectors**: Capture and defend galactic territories
+- **Complete Missions**: Special missions with unique rewards
+- **Upgrade Technology**: Permanent ship improvements
+- **Mine XDUST**: Generate resources over time
+
+### Strategy Features
+- **Resource Management**: Balance energy, metals, and crystals
+- **Sector Control**: Expand your influence across the galaxy
+- **Mission System**: Complete objectives for rewards
+- **Upgrade Shop**: Permanent improvements to your ship
+- **Achievements**: Track your progress and accomplishments
+
+## 🛠️ Upgrade System
+
+### Available Upgrades
+- **Fire Rate**: Decrease shooting cooldown (5 levels)
+- **Bullet Damage**: Increase damage output (5 levels)
+- **Hull Strength**: Add extra lives (3 levels)
+
+### Economy
+- **XDUST**: Main in-game currency
+- **Energy**: Primary resource for upgrades
+- **Metals**: Crafting material
+- **Crystals**: Rare resource for advanced upgrades
+
 ## 🎯 Tips for Success
 
 - **Prioritize Power-ups**: They can save you in tight situations
 - **Watch for Boss**: Save your shields for boss encounters
 - **Stay Mobile**: Constant movement makes you harder to hit
 - **Manage Space**: Use the entire screen to your advantage
+- **Use Time Dilation**: Strategic slowdown for difficult situations
+- **Upgrade Wisely**: Balance offensive and defensive upgrades
+- **Complete Missions**: Earn bonus resources and XDUST
 
 ## 🔧 Customization
 
@@ -137,6 +172,10 @@ const player = {
 // Speed: 10000ms (10 seconds)  
 // Laser: 10000ms (10 seconds)
 // Mega Shield: 15000ms (15 seconds)
+
+// Time Dilation settings
+let timeDilationFactor = 1.0;
+let timeDilationMax = 0.5;
 ```
 
 ## 🌟 Special Features
@@ -147,16 +186,25 @@ const player = {
 - Ship damage flashing
 - Power-up collection flashes
 - Animated engine flames
+- Galactic map animations
 
 ### Audio Integration
 - Three-channel sound system
 - Proper audio timing
 - Error handling for missing files
+- Web Audio API support
 
 ### Mobile Optimization
 - Touch-friendly controls
 - Prevent default browser behaviors
 - Optimized performance for mobile devices
+- Safe area support for notched displays
+
+### Advanced Mechanics
+- **Time Dilation**: Slow down time during intense combat
+- **Overheat System**: Manage weapon heat for optimal performance
+- **Code Drones**: Special enemy types with unique behavior
+- **Resource Streaming**: Animated resource transfers between sectors
 
 ## 🐛 Known Issues
 
@@ -174,11 +222,8 @@ For issues or suggestions:
 ## 📄 License
 
 This game is free to use and modify. Attribution is appreciated but not required.
+By 0penAGI
 
 ---
 
 **Ready to defend the galaxy? Launch SPACEDUST and begin your cosmic adventure!** 🚀✨
-
-
-**Ready to defend the galaxy? Launch SPACEDUST and begin your cosmic adventure!** 🚀✨
- update readme IN ENGLISG
