@@ -2659,28 +2659,26 @@
 
         function gameLoop() {
             if (!gameRunning) return;
-            
-            // Автоматическая стрельба при удержании FIRE
+
             const now = Date.now();
+
+            // --- Авто-стрельба при удержании FIRE ---
             if (firePressed && now - lastShootTime >= shootCooldown) {
                 shoot();
                 lastShootTime = now;
-                
-                // Time Dilation и перегрев при автоматической стрельбе
-                if (overheatLevel < MAX_OVERHEAT) {
-                    isDilating = true;
-                    timeDilationFactor = timeDilationMax;
-                    overheatLevel += 1.5;
-                } else {
-                    isDilating = false;
-                    timeDilationFactor = 1.0;
-                }
+
+                // Только перегрев оружия и визуальный эффект
                 fireIntensity = Math.min(MAX_INTENSITY, fireIntensity + 0.06);
             }
-            
-            updateOverheat(); // плавное снижение fireIntensity
+
+            // --- Перегрев оружия ---
+            updateOverheat(); // плавное снижение fireIntensity и визуализация перегрева
+
+            // --- Очищаем canvas ---
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawStars(); updateStars();
+
+            // --- Рисуем и обновляем объекты ---
+            drawStars(); updateStars(); // скорость движения звёзд больше не зависит от FIRE
             drawParticles(); updateParticles();
             powerUps.forEach(drawPowerUp); updatePowerUps();
             drawPlayer(); movePlayer();
@@ -2688,11 +2686,16 @@
             enemies.forEach(enemy => {
                 if (enemy.type === 'code-drone') drawCodeDrone(enemy);
                 else drawEnemy(enemy);
-            }); updateEnemies(); spawnEnemy();
+            });
+            updateEnemies(); spawnEnemy();
             if (bossActive && boss) drawBoss(boss);
+
+            // --- Сбросы и проверки ---
             if (megaShieldStage > 0 && Date.now() > megaShieldEnd) megaShieldStage = 0;
             if (player.isDamaged && Date.now() - player.damageTime > 1000) player.isDamaged = false;
             checkCollisions();
+
+            // --- Следующий кадр ---
             animationId = requestAnimationFrame(gameLoop);
         }
 
@@ -2707,25 +2710,22 @@
         }
         function setLeft(active) { isLeftPressed = active; document.getElementById('leftBtn').classList.toggle('active', active); updateDx(); }
         function setRight(active) { isRightPressed = active; document.getElementById('rightBtn').classList.toggle('active', active); updateDx(); }
-        // --- Time Dilation Fire/Overheat ---
+        // === Управление FIRE ===
         function setFire(active) {
             firePressed = active;
             document.getElementById('fireBtn').classList.toggle('active', active);
-            
+
             if (active) {
-                // Инициализируем аудио при первом взаимодействии
-                if (!isAudioLoaded) initAudio();
-                // Немедленный выстрел при нажатии
+                if (!isAudioLoaded) initAudio(); // первый выстрел с загрузкой аудио
                 const now = Date.now();
                 if (now - lastShootTime >= shootCooldown) {
                     shoot();
                     lastShootTime = now;
                 }
             } else {
+                // Сбрасываем перегрев оружия при отпускании
                 fireIntensity = 0;
-                isDilating = false;
-                timeDilationFactor = 1.0;
-                // Быстрое остывание при отпускании FIRE
+                // Можно быстро охладить overheatLevel
                 const coolInterval = setInterval(() => {
                     overheatLevel = Math.max(0, overheatLevel - 2);
                     if (overheatLevel === 0) clearInterval(coolInterval);
@@ -2795,4 +2795,3 @@
     </script>
 </body>
 </html>
-
