@@ -1497,7 +1497,7 @@
             ctx.fill();
 
             // --- ЭФФЕКТ ДЫМА/КОСМИЧЕСКОГО СЛЕДА ---
-            for (let i = 0; i < 1; i++) {
+            for (let i = 0; i < 3; i++) {
                 particles.push({
                     x: player.x + player.width/2 + (Math.random()*12 - 6),
                     y: player.y + player.height + 4,
@@ -1735,6 +1735,27 @@
                 };
             }
         }
+
+        // === Code Drone movement & destruction ===
+        function updateCodeDrone(drone, time) {
+            drone.x += Math.sin(time / 200) * 1.5 * timeDilationFactor;
+            drone.y += 1.2 * timeDilationFactor;
+
+            if (!drone.nextGlitch || Date.now() > drone.nextGlitch) {
+                drone.nextGlitch = Date.now() + 2500 + Math.random() * 1000;
+                setTimeout(() => {
+                    drone.x += (Math.random() - 0.5) * 120;
+                    drone.y += (Math.random() - 0.5) * 60;
+                    createVisualGlitch(drone.x, drone.y);
+                }, 100);
+            }
+        }
+
+        function destroyCodeDrone(drone) {
+            createCodeExplosion(drone.x, drone.y);
+            timeDilationFactor = 0.4;
+            setTimeout(() => timeDilationFactor = 1.0, 2000);
+        }
         // === Boss Shooting Logic ===
         function bossShoot() {
             if (!bossActive || !boss) return;
@@ -1845,6 +1866,9 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 enemy.y += enemy.speed * timeDilationFactor;
+                if (enemy.type === 'code-drone') {
+                    updateCodeDrone(enemy, Date.now());
+                }
                 if (enemy.y > canvas.height) {
                     enemies.splice(i, 1);
                     lives--;
@@ -1877,6 +1901,7 @@
                         const dmg = UPGRADE_DATA.bulletDamage.effect(upgradeLevels.bulletDamage);
                         score += Math.round(10 * dmg);
                         updateUI();
+                        if (enemy.type === 'code-drone') destroyCodeDrone(enemy);
                         break;
                     }
                 }
@@ -1988,6 +2013,35 @@
             ctx.shadowColor = '#fff';
             ctx.fill();
             ctx.restore();
+        }
+
+        // === Visual Glitch & Code Explosion Particle Effects ===
+        function createVisualGlitch(x, y) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x + (Math.random() * 30 - 15),
+                    y: y + (Math.random() * 30 - 15),
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 18 + Math.random() * 12,
+                    size: 2,
+                    color: `rgba(${100 + Math.random()*155}, ${50 + Math.random()*105}, 255, 0.9)`
+                });
+            }
+        }
+
+        function createCodeExplosion(x, y) {
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    life: 25 + Math.random() * 20,
+                    size: 2.5 + Math.random() * 1.5,
+                    color: `rgba(${100 + Math.random()*155}, ${50 + Math.random()*105}, 255, 1)`
+                });
+            }
         }
 
         function gameLoop() {
