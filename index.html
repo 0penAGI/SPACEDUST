@@ -1495,6 +1495,19 @@
             ctx.lineTo(player.x + 30, player.y + player.height + flameHeight);
             ctx.closePath();
             ctx.fill();
+
+            // --- ЭФФЕКТ ДЫМА/КОСМИЧЕСКОГО СЛЕДА ---
+            for (let i = 0; i < 4; i++) {
+                particles.push({
+                    x: player.x + player.width/2 + (Math.random()*12 - 6),
+                    y: player.y + player.height + 4,
+                    vx: (Math.random() - 0.5) * 0.6,
+                    vy: Math.random() * 2 + 1.5,
+                    life: 25 + Math.random() * 10,
+                    size: 2 + Math.random() * 2,
+                    color: 'rgba(255,180,60,0.85)'
+                });
+            }
             if (megaShieldStage > 0 && Date.now() < megaShieldEnd) {
                 ctx.save();
                 ctx.beginPath();
