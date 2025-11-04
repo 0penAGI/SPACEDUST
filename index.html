@@ -570,28 +570,42 @@
         // Данные апгрейдов: стоимость, эффект и максимум
         
         
+        // Новый формат апгрейдов с мульти-ресурсной стоимостью
         const UPGRADE_DATA = {
             fireRate: {
                 name: "Скорострельность",
                 maxLevel: 5,
-                baseCost: 500,
-                costMultiplier: 1.5,
+                cost: [
+                    { energy: 500, metals: 100, crystals: 10 },
+                    { energy: 750, metals: 180, crystals: 22 },
+                    { energy: 1130, metals: 270, crystals: 38 },
+                    { energy: 1700, metals: 400, crystals: 60 },
+                    { energy: 2550, metals: 600, crystals: 90 }
+                ],
                 effect: level => level > 0 ? (250 / (1 + level * 0.15)) : 250,
                 description: "Уменьшает кулдаун выстрелов."
             },
             bulletDamage: {
                 name: "Урон",
                 maxLevel: 5,
-                baseCost: 1000,
-                costMultiplier: 1.8,
+                cost: [
+                    { energy: 1000, metals: 250, crystals: 30 },
+                    { energy: 1800, metals: 400, crystals: 60 },
+                    { energy: 3200, metals: 650, crystals: 100 },
+                    { energy: 5000, metals: 1100, crystals: 160 },
+                    { energy: 8000, metals: 1800, crystals: 250 }
+                ],
                 effect: level => 1 + level * 0.5,
                 description: "Увеличивает урон от пуль."
             },
             hull: {
                 name: "Прочность корпуса",
                 maxLevel: 3,
-                baseCost: 800,
-                costMultiplier: 2.0,
+                cost: [
+                    { energy: 800, metals: 200, crystals: 20 },
+                    { energy: 1600, metals: 350, crystals: 45 },
+                    { energy: 3200, metals: 600, crystals: 80 }
+                ],
                 effect: level => 3 + level,
                 description: "Добавляет дополнительную жизнь."
             }
@@ -697,7 +711,6 @@
             for(const key in UPGRADE_DATA){
                 const data = UPGRADE_DATA[key];
                 const currentLevel = upgradeLevels[key];
-                const nextCost = Math.floor(data.baseCost * Math.pow(data.costMultiplier, currentLevel));
                 const isMaxLevel = currentLevel >= data.maxLevel;
                 const upgradeDiv = document.createElement('div');
                 upgradeDiv.className = 'upgrade-item';
@@ -718,16 +731,30 @@
                         <div style="font-size:13px;color:#00ff88;">МАКСИМУМ.</div>
                     `;
                 } else {
-                    const canAfford = currentEnergy>=nextCost;
+                    // Получаем стоимость на следующий уровень
+                    const nextCost = data.cost[currentLevel];
+                    // Проверяем, хватает ли всех ресурсов
+                    const canAfford =
+                        currentEnergy >= nextCost.energy &&
+                        currentMetals >= nextCost.metals &&
+                        currentCrystals >= nextCost.crystals;
                     const btnColor = canAfford?'#ff00ff':'#444';
                     const btnShadow = canAfford?'0 0 10px #ff00ff':'none';
+                    // Отображение стоимости всех ресурсов
+                    let costHtml = `
+                        <span style="color:${currentEnergy>=nextCost.energy?'#00ffff':'#ff3333'};font-weight:bold;">⚡ ${nextCost.energy}</span>
+                        <span style="color:${currentMetals>=nextCost.metals?'#ffaa00':'#ff3333'};font-weight:bold;">🪐 ${nextCost.metals}</span>
+                        <span style="color:${currentCrystals>=nextCost.crystals?'#ff00ff':'#ff3333'};font-weight:bold;">💎 ${nextCost.crystals}</span>
+                    `;
                     upgradeDiv.innerHTML = `
                         <div style="color:#fff;font-weight:bold;">${data.name} (Ур. ${currentLevel})</div>
                         <div style="font-size:11px;color:#ccc;margin-bottom:5px;">${levelIndicators}</div>
                         <div style="font-size:13px;color:#aaa;">${data.description}</div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-                            <span style="color:${canAfford?'#00ffff':'#ff3333'};font-weight:bold;">⚡ ${nextCost}</span>
-                            <button onclick="buyUpgrade('${key}'); setTimeout(renderUpgradeShopModal, 10);" style="background:${btnColor};color:#000;border:none;padding:6px 16px;cursor:${canAfford?'pointer':'not-allowed'};border-radius:3px;font-family:'Orbitron',monospace;font-weight:bold;box-shadow:${btnShadow};font-size:15px;transition:all 0.2s;" ${canAfford?'':'disabled'}>КУПИТЬ</button>
+                        <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+                            <div style="display:flex;gap:12px;justify-content:flex-start;">${costHtml}</div>
+                            <div style="display:flex;justify-content:flex-end;">
+                                <button onclick="buyUpgrade('${key}'); setTimeout(renderUpgradeShopModal, 10);" style="background:${btnColor};color:#000;border:none;padding:6px 16px;cursor:${canAfford?'pointer':'not-allowed'};border-radius:3px;font-family:'Orbitron',monospace;font-weight:bold;box-shadow:${btnShadow};font-size:15px;transition:all 0.2s;" ${canAfford?'':'disabled'}>КУПИТЬ</button>
+                            </div>
                         </div>
                     `;
                 }
@@ -753,26 +780,31 @@
             }
         }
 
-        // Покупка апгрейда
+        // Покупка апгрейда с поддержкой мульти-ресурсов
         function buyUpgrade(key){
             const data = UPGRADE_DATA[key];
             const currentLevel = upgradeLevels[key];
-            const cost = Math.floor(data.baseCost * Math.pow(data.costMultiplier, currentLevel));
-            if(currentEnergy>=cost && currentLevel<data.maxLevel){
-                currentEnergy -= cost;
+            if(currentLevel >= data.maxLevel) return;
+            const cost = data.cost[currentLevel];
+            // Проверяем хватает ли всех ресурсов
+            if(
+                currentEnergy>=cost.energy &&
+                currentMetals>=cost.metals &&
+                currentCrystals>=cost.crystals
+            ){
+                currentEnergy -= cost.energy;
+                currentMetals -= cost.metals;
+                currentCrystals -= cost.crystals;
                 upgradeLevels[key]++;
                 saveData();
                 applyUpgradeEffects();
-
-                const itemElement = document.querySelector(`#upgradesList .upgrade-item:nth-child(${Object.keys(UPGRADE_DATA).indexOf(key)+1})`);
-                if(itemElement){
-                    itemElement.style.boxShadow='0 0 20px #00ff88';
-                    setTimeout(()=>{itemElement.style.boxShadow='none'; renderUpgradeShopModal();},300);
-                } else { renderUpgradeShopModal(); }
-
-                if(tg) tg.showAlert(`✅ ${data.name} повышен до Ур. ${upgradeLevels[key]}!`);
+                displayResources();
+                // Визуальный фидбек (можно доработать)
+                if(tg && tg.showAlert) {
+                    tg.showAlert(`✅ ${data.name} повышен до Ур. ${upgradeLevels[key]}!`);
+                }
             } else {
-                if(tg) tg.showAlert("🚫 Недостаточно энергии!");
+                if(tg && tg.showAlert) tg.showAlert("🚫 Недостаточно ресурсов!");
                 // Покачать модальное окно для эффекта ошибки
                 const modal = document.getElementById('upgradeShopModal');
                 if (modal) {
