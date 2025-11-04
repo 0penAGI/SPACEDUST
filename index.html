@@ -1198,6 +1198,83 @@
             }
         }
 
+        // === Новый: редкое появление Ххаасов ===
+        function spawnHhaasEvent() {
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            if (!galaxyContainer) return;
+
+            if (galaxyContainer.querySelector('.hhaas-event')) return;
+
+            const x = 10 + Math.random() * 80;
+            const y = 10 + Math.random() * 80;
+
+            const hhaas = document.createElement('div');
+            hhaas.className = 'sector hhaas-event';
+            hhaas.style.position = 'absolute';
+            hhaas.style.left = `${x}%`;
+            hhaas.style.top = `${y}%`;
+            hhaas.style.width = '80px';
+            hhaas.style.height = '80px';
+            hhaas.style.borderRadius = '50%';
+            hhaas.style.background = 'radial-gradient(circle, #ff88ff 0%, #ff44ff 50%, transparent 100%)';
+            hhaas.style.boxShadow = '0 0 40px #ff44ff, 0 0 80px #ff88ff';
+            hhaas.style.zIndex = 160;
+            hhaas.style.display = 'flex';
+            hhaas.style.alignItems = 'center';
+            hhaas.style.justifyContent = 'center';
+            hhaas.style.cursor = 'pointer';
+            hhaas.innerHTML = `<div style="text-align:center;font-size:14px;font-weight:bold;color:#fff;text-shadow:0 0 8px #ff88ff;">
+                                👽 Hhaas Show<br>✨ XDUST
+                               </div>`;
+
+            hhaas.animate([
+                { transform: 'scale(1)', opacity: 0.9 },
+                { transform: 'scale(1.15)', opacity: 1 },
+                { transform: 'scale(1)', opacity: 0.9 }
+            ], { duration: 2000, iterations: Infinity });
+
+            hhaas.addEventListener('click', () => {
+                const energyBonus = 500 + Math.floor(Math.random() * 500);
+                const metalsBonus = Math.floor(energyBonus * 0.7);
+                const crystalsBonus = Math.floor(energyBonus * 0.4);
+                const xsdcBonus = 250 + Math.floor(Math.random() * 250);
+
+                currentEnergy += energyBonus;
+                currentMetals += metalsBonus;
+                currentCrystals += crystalsBonus;
+                currentXSDC += xsdcBonus;
+                displayResources();
+                saveDataAll && saveDataAll();
+
+                const burst = document.createElement('div');
+                burst.style.position = 'absolute';
+                burst.style.left = hhaas.style.left;
+                burst.style.top = hhaas.style.top;
+                burst.style.width = '180px';
+                burst.style.height = '180px';
+                burst.style.borderRadius = '50%';
+                burst.style.background = 'radial-gradient(circle, #ff88ff 0%, #ff44ff 50%, transparent 100%)';
+                burst.style.transform = 'translate(-50%, -50%)';
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = 161;
+                burst.style.animation = 'burstFade 2s ease-out forwards';
+                galaxyContainer.appendChild(burst);
+                setTimeout(() => burst.remove(), 1800);
+
+                if (tg && tg.showAlert) {
+                    tg.showAlert(`👽 Hhaas event! +${energyBonus}⚡, +${metalsBonus}🪐, +${crystalsBonus}💎, +${xsdcBonus} $XSDC`);
+                } else {
+                    alert(`👽 Hhaas event! +${energyBonus}⚡, +${metalsBonus}🪐, +${crystalsBonus}💎, +${xsdcBonus} $XSDC`);
+                }
+
+                hhaas.remove();
+            });
+
+            galaxyContainer.appendChild(hhaas);
+
+            setTimeout(() => { if (hhaas.parentNode) hhaas.remove(); }, 20000);
+        }
+
         // === Новый initGalaxyMap с дополнительными событиями и функциями ===
         function initGalaxyMap() {
             loadUpgradeData();
@@ -1223,6 +1300,8 @@
             if (Math.random() < 0.11) offerTrade(sectors, galaxyContainer);
             if (Math.random() < 0.09) triggerDistressSignal(sectors, galaxyContainer);
             if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
+            // === Новый: редкое появление Ххаасов ===
+            if (Math.random() < 0.10) spawnHhaasEvent();
 
             // Produce resources and update prosperity
             produceSectorResources(sectors);
