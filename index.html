@@ -568,6 +568,8 @@
         let upgradeLevels = { fireRate: 0, bulletDamage: 0, hull: 0 };
 
         // Данные апгрейдов: стоимость, эффект и максимум
+        
+        
         const UPGRADE_DATA = {
             fireRate: {
                 name: "Скорострельность",
@@ -1064,17 +1066,15 @@
             }
         }
 
+        // === Новый initGalaxyMap с дополнительными событиями и функциями ===
         function initGalaxyMap() {
-            // Загрузка прогресса апгрейдов/ресурсов и $XSDC
             loadUpgradeData();
             loadDataAll();
             applyUpgradeEffects();
             displayResources();
 
-            // Удалить старые сектора (div.sector)
             const galaxyContainer = document.getElementById('galaxyContainer');
             Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
-            // Также удалить старые звезды, чтобы не плодить их
             Array.from(galaxyContainer.querySelectorAll('div'))
                 .forEach(el => {
                     if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
@@ -1082,67 +1082,32 @@
                     }
                 });
 
-            // Обновленный массив секторов, включая новую миссию $XDUST-9001
-            const sectors = [
-                { id: 1, x: 15, y: 20, name: "СИРИУС", type: "controlled", resources: 2000 },
-                { id: 2, x: 25, y: 60, name: "АЛЬФА ЦЕНТАВРА", type: "enemy", resources: 1500 },
-                { id: 3, x: 50, y: 30, name: "БЕТЕЛЬГЕЙЗЕ", type: "neutral", resources: 800 },
-                { id: 4, x: 70, y: 50, name: "ПРОЦИОН", type: "controlled", resources: 1200 },
-                { id: 5, x: 40, y: 70, name: "ВЕГА", type: "enemy", resources: 1800 },
-                { id: 6, x: 60, y: 20, name: "АРКТУР", type: "neutral", resources: 600 },
-                { id: 7, x: 80, y: 40, name: "РИГЕЛЬ", type: "controlled", resources: 2500 },
-                // Новый сектор: секретная миссия $XDUST-9001
-                {
-                    id: 9001,
-                    x: 55, y: 80,
-                    name: "$XDUST-9001",
-                    type: "mission",
-                    resources: 9001,
-                    locked: currentEnergy < 3000,
-                    requiredEnergy: 3000
-                }
-            ];
-            // Новый сектор: $XDUST-9999 с анимацией и интерактивностью
-            const xdust9999Sector = {
-                id: 9999,
-                x: 75,
-                y: 85,
-                name: "$XDUST-9999",
-                type: "xdust9999",
-                resources: 9999,
-                description: "СЕКРЕТНЫЙ СЕКТОР",
-            };
-            sectors.push(xdust9999Sector);
-            // Новый сектор: $XDUST с уникальной анимацией и обработчиком встречи
-            const xdustSpecialSector = {
-                id: 7777,
-                x: 30,
-                y: 88,
-                name: "$XDUST",
-                type: "xdust",
-                resources: 7777,
-                description: "Уникальный сектор XDUST",
-                visited: false
-            };
-            sectors.push(xdustSpecialSector);
+            // Получаем массив секторов через функцию (можно расширять)
+            const sectors = getGalaxySectors();
 
-            // Создаем секторы на карте
+            // Динамические события: шанс появления ресурсного астероида, рейда, предложения торговли, сигнала бедствия и т.д.
+            if (Math.random() < 0.18) spawnResourceAsteroid(sectors, galaxyContainer);
+            if (Math.random() < 0.13) enemyRaid(sectors, galaxyContainer);
+            if (Math.random() < 0.11) offerTrade(sectors, galaxyContainer);
+            if (Math.random() < 0.09) triggerDistressSignal(sectors, galaxyContainer);
+            if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
+
+            // Производство ресурсов и обновление благосостояния секторов (пример)
+            produceSectorResources(sectors);
+            updateSectorProsperity(sectors);
+
             sectors.forEach(sector => {
                 let sectorElement = document.createElement('div');
-                // Корректировка позиции по Y для определённых секторов
                 let adjustedY = sector.y;
-                // Поднять Альфа Центавра выше Веги
-                if (sector.name === "АЛЬФА ЦЕНТАВРА") adjustedY = 55; // ВЕГА у нас 70, ставим выше 55%
-                // Поднять все сектора $XDUST
+                if (sector.name === "АЛЬФА ЦЕНТАВРА") adjustedY = 55;
                 if (sector.name === "$XDUST" || sector.name === "$XDUST-9999" || sector.name === "$XDUST-9001") {
-                    adjustedY -= 8; // примерно 60 пикселей для карты высотой ~750px
-                    if (adjustedY < 0) adjustedY = 0; // защита от выхода за предел
+                    adjustedY -= 8;
+                    if (adjustedY < 0) adjustedY = 0;
                 }
                 if (sector.type === "mission") {
                     const isUnlocked = !sector.locked;
                     sectorElement.className = isUnlocked ? "sector mission-unlocked" : "sector mission-locked";
                     sectorElement.style.left = `${sector.x}%`;
-                    // sectorElement.style.top = `${sector.y}%`; // Удалено, чтобы не дублировать
                     sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align:center; font-size:11px;">
@@ -1154,13 +1119,11 @@
                     sectorElement.addEventListener('click', () => {
                         if (sector.name === "$XDUST-9001") {
                             if (currentEnergy >= 3000) {
-                                // Запускаем миссию с автоматическим завершением
                                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
                                     tg.showAlert("🚀 МЕГА-МИССИЯ ЗАПУЩЕНА!\nЗавершение через 5 сек...");
                                 } else {
                                     alert("🚀 МЕГА-МИССИЯ ЗАПУЩЕНА!\nЗавершение через 5 сек...");
                                 }
-                                // Визуальный эффект
                                 const burst = document.createElement('div');
                                 burst.style.position = 'absolute';
                                 burst.style.left = '50%';
@@ -1173,7 +1136,6 @@
                                 burst.style.animation = 'burstFade 2s ease-out forwards';
                                 galaxyContainer.appendChild(burst);
                                 setTimeout(() => burst.remove(), 2000);
-                                // Запуск автоматического завершения миссии
                                 attemptCapture(sector.id, sector, () => {
                                     if (typeof tg !== "undefined" && tg && tg.showAlert) {
                                         tg.showAlert("✅ Миссия завершена! Получено $XSDC!");
@@ -1191,10 +1153,8 @@
                         }
                     });
                 } else if (sector.type === "xdust9999") {
-                    // Новый сектор $XDUST-9999
                     sectorElement.className = "sector xdust9999-sector";
                     sectorElement.style.left = `${sector.x}%`;
-                    // sectorElement.style.top = `${sector.y}%`; // Удалено
                     sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align:center; font-size:13px;">
@@ -1203,13 +1163,11 @@
                             <span style="color:#ff2222;">⚡${sector.resources}</span>
                         </div>
                     `;
-                    // Добавим анимацию красного свечения и "хвоста"
                     sectorElement.style.boxShadow = "0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222";
                     sectorElement.style.background = "radial-gradient(circle at 55% 60%, #ff3333 0%, #990000 70%, transparent 100%)";
                     sectorElement.style.border = "3px solid #ff2222";
                     sectorElement.style.animation = "xdust9999-glow 1.3s infinite alternate";
                     sectorElement.style.zIndex = 11;
-                    // Добавим визуальный хвост (CSS)
                     let tail = document.createElement('div');
                     tail.style.position = 'absolute';
                     tail.style.left = '50%';
@@ -1225,15 +1183,12 @@
                     tail.style.opacity = "0.85";
                     tail.className = "xdust9999-tail";
                     sectorElement.appendChild(tail);
-                    // Обработчик клика
                     sectorElement.addEventListener('click', () => {
                         handleXDUSTEncounter(sector);
                     });
                 } else if (sector.type === "xdust") {
-                    // Новый сектор $XDUST — уникальная анимация и обработчик встречи
                     sectorElement.className = "sector xdust-sector";
                     sectorElement.style.left = `${sector.x}%`;
-                    // sectorElement.style.top = `${sector.y}%`; // Удалено
                     sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align:center; font-size:13px;">
@@ -1242,13 +1197,11 @@
                             <span style="color:#00ffff;">⚡${sector.resources}</span>
                         </div>
                     `;
-                    // Анимация: голубое пульсирующее свечение и кольца
                     sectorElement.style.boxShadow = "0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff";
                     sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00ffff 0%, #005577 70%, transparent 100%)";
                     sectorElement.style.border = "3px solid #00ffff";
                     sectorElement.style.animation = "xdust-glow 1.7s infinite alternate";
                     sectorElement.style.zIndex = 12;
-                    // Кольцевой эффект
                     let ring = document.createElement('div');
                     ring.style.position = 'absolute';
                     ring.style.left = '-15%';
@@ -1262,14 +1215,12 @@
                     ring.style.animation = "xdust-ring 2.7s infinite linear";
                     ring.className = "xdust-ring";
                     sectorElement.appendChild(ring);
-                    // Обработчик клика
                     sectorElement.addEventListener('click', () => {
                         handleXDUSTEncounter(sector);
                     });
                 } else {
                     sectorElement.className = `sector ${sector.type}`;
                     sectorElement.style.left = `${sector.x}%`;
-                    // sectorElement.style.top = `${sector.y}%`; // Удалено
                     sectorElement.style.top = `${adjustedY}%`;
                     sectorElement.innerHTML = `
                         <div style="text-align: center; font-size: 10px;">
@@ -1278,9 +1229,7 @@
                         </div>
                     `;
                     sectorElement.addEventListener('click', () => {
-                        // Для enemy и neutral: попытка захвата и бонус $XSDC
                         if (sector.type === 'enemy' || sector.type === 'neutral') {
-                            // Бонус $XSDC 10% от ресурсов
                             if (sector.type !== 'controlled') {
                                 attemptCapture(sector.id, sector, () => {
                                     if (typeof tg !== "undefined" && tg && tg.showAlert) {
@@ -1293,7 +1242,6 @@
                         } else {
                             alert(`🚀 Выбран сектор: ${sector.name}\n💎 Ресурсы: ${sector.resources} XDUST`);
                         }
-                        // Анимация передачи ресурсов с Сириуса
                         if (sector.type === 'enemy') {
                             createResourceStream(sector);
                         }
@@ -1324,13 +1272,9 @@
                 `;
                 document.head.appendChild(style);
             }
-
-            // Создаем звездный фон (но только если нет звезд)
             if (!galaxyContainer.querySelector('.galaxy-star')) {
                 createGalaxyStars();
             }
-
-            // Автоматическая передача ресурсов с Сириуса (кроме новой миссии)
             if (!galaxyContainer._xdustAutoTransfer) {
                 galaxyContainer._xdustAutoTransfer = setInterval(() => {
                     const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.type !== "mission");
@@ -1340,6 +1284,200 @@
                     }
                 }, 5000);
             }
+        }
+
+        // === Дополнительные функции для событий на галактической карте ===
+        // 1. Ресурсный астероид
+        function spawnResourceAsteroid(sectors, container) {
+            const target = sectors[Math.floor(Math.random() * sectors.length)];
+            const asteroid = document.createElement('div');
+            asteroid.className = 'sector asteroid-event';
+            asteroid.style.position = 'absolute';
+            asteroid.style.left = `${target.x + (Math.random() * 10 - 5)}%`;
+            asteroid.style.top = `${target.y + (Math.random() * 10 - 5)}%`;
+            asteroid.style.width = '60px';
+            asteroid.style.height = '60px';
+            asteroid.style.background = 'radial-gradient(circle, #aaa 40%, #333 100%)';
+            asteroid.style.border = '2px solid #ffaa00';
+            asteroid.style.boxShadow = '0 0 20px #ffaa00, 0 0 60px #ffaa00';
+            asteroid.style.zIndex = 100;
+            asteroid.innerHTML = '<div style="text-align:center;font-size:10px;color:#ffaa00;">🪨 АСТЕРОИД<br>+XDUST</div>';
+            asteroid.addEventListener('click', () => {
+                updateGalaxyResources(400 + Math.floor(Math.random() * 400));
+                asteroid.remove();
+                if (tg && tg.showAlert) tg.showAlert("🪨 Собран ресурсный астероид!");
+            });
+            container.appendChild(asteroid);
+            setTimeout(() => asteroid.remove(), 11000);
+        }
+
+        // 2. Вражеский рейд
+        function enemyRaid(sectors, container) {
+            const targets = sectors.filter(s => s.type === 'controlled');
+            if (targets.length === 0) return;
+            const target = targets[Math.floor(Math.random() * targets.length)];
+            const raid = document.createElement('div');
+            raid.className = 'sector raid-event';
+            raid.style.position = 'absolute';
+            raid.style.left = `${target.x}%`;
+            raid.style.top = `${target.y}%`;
+            raid.style.width = '68px';
+            raid.style.height = '68px';
+            raid.style.background = 'radial-gradient(circle, #ff2222 40%, #660000 100%)';
+            raid.style.border = '2px dashed #ff2222';
+            raid.style.boxShadow = '0 0 30px #ff2222';
+            raid.style.zIndex = 110;
+            raid.innerHTML = '<div style="text-align:center;font-size:10px;color:#fff;">⚔️ РЕЙД<br>-XDUST</div>';
+            raid.addEventListener('click', () => {
+                updateGalaxyResources(-250 - Math.floor(Math.random() * 200));
+                raid.remove();
+                if (tg && tg.showAlert) tg.showAlert("⚔️ Отражён вражеский рейд!");
+            });
+            container.appendChild(raid);
+            setTimeout(() => raid.remove(), 9000);
+        }
+
+        // 3. Торговое предложение
+        function offerTrade(sectors, container) {
+            const target = sectors[Math.floor(Math.random() * sectors.length)];
+            const trade = document.createElement('div');
+            trade.className = 'sector trade-event';
+            trade.style.position = 'absolute';
+            trade.style.left = `${target.x + (Math.random() * 8 - 4)}%`;
+            trade.style.top = `${target.y + (Math.random() * 8 - 4)}%`;
+            trade.style.width = '56px';
+            trade.style.height = '56px';
+            trade.style.background = 'radial-gradient(circle, #00ffaa 40%, #006666 100%)';
+            trade.style.border = '2px solid #00ffaa';
+            trade.style.boxShadow = '0 0 20px #00ffaa';
+            trade.style.zIndex = 120;
+            trade.innerHTML = '<div style="text-align:center;font-size:10px;color:#00ffaa;">🤝 ТОРГОВЛЯ<br>+/-XDUST</div>';
+            trade.addEventListener('click', () => {
+                const gain = Math.random() < 0.5 ? 200 : -150;
+                updateGalaxyResources(gain);
+                trade.remove();
+                if (tg && tg.showAlert) tg.showAlert(gain > 0 ? "🤝 Удачная сделка!" : "🤝 Неудачная сделка!");
+            });
+            container.appendChild(trade);
+            setTimeout(() => trade.remove(), 8000);
+        }
+
+        // 4. Сигнал бедствия
+        function triggerDistressSignal(sectors, container) {
+            const target = sectors[Math.floor(Math.random() * sectors.length)];
+            const distress = document.createElement('div');
+            distress.className = 'sector distress-event';
+            distress.style.position = 'absolute';
+            distress.style.left = `${target.x + (Math.random() * 7 - 3)}%`;
+            distress.style.top = `${target.y + (Math.random() * 7 - 3)}%`;
+            distress.style.width = '50px';
+            distress.style.height = '50px';
+            distress.style.background = 'radial-gradient(circle, #ff00ff 40%, #330044 100%)';
+            distress.style.border = '2px solid #ff00ff';
+            distress.style.boxShadow = '0 0 18px #ff00ff';
+            distress.style.zIndex = 130;
+            distress.innerHTML = '<div style="text-align:center;font-size:10px;color:#ff00ff;">🆘 СИГНАЛ<br>+/-XDUST</div>';
+            distress.addEventListener('click', () => {
+                const gain = Math.random() < 0.7 ? 150 : -120;
+                updateGalaxyResources(gain);
+                distress.remove();
+                if (tg && tg.showAlert) tg.showAlert(gain > 0 ? "🆘 Спасён корабль!" : "🆘 Корабль не удалось спасти!");
+            });
+            container.appendChild(distress);
+            setTimeout(() => distress.remove(), 7000);
+        }
+
+        // 5. Построить оборону
+        function buildDefense(sectors, container) {
+            const target = sectors.filter(s => s.type === 'controlled')[Math.floor(Math.random() * sectors.filter(s => s.type === 'controlled').length)];
+            if (!target) return;
+            const defense = document.createElement('div');
+            defense.className = 'sector defense-event';
+            defense.style.position = 'absolute';
+            defense.style.left = `${target.x}%`;
+            defense.style.top = `${target.y}%`;
+            defense.style.width = '58px';
+            defense.style.height = '58px';
+            defense.style.background = 'radial-gradient(circle, #00aaff 40%, #003355 100%)';
+            defense.style.border = '2px solid #00aaff';
+            defense.style.boxShadow = '0 0 18px #00aaff';
+            defense.style.zIndex = 140;
+            defense.innerHTML = '<div style="text-align:center;font-size:10px;color:#00aaff;">🛡️ ОБОРОНА<br>-ЭНЕРГИЯ</div>';
+            defense.addEventListener('click', () => {
+                if (currentEnergy > 300) {
+                    currentEnergy -= 300;
+                    displayResources();
+                    saveDataAll();
+                    if (tg && tg.showAlert) tg.showAlert("🛡️ Оборона построена!");
+                } else {
+                    if (tg && tg.showAlert) tg.showAlert("Недостаточно энергии для обороны!");
+                }
+                defense.remove();
+            });
+            container.appendChild(defense);
+            setTimeout(() => defense.remove(), 9000);
+        }
+
+        // 6. Производство ресурсов в секторах (пример)
+        function produceSectorResources(sectors) {
+            sectors.forEach(sector => {
+                if (sector.type === 'controlled') {
+                    sector.resources += Math.floor(Math.random() * 15 + 5);
+                }
+            });
+        }
+
+        // 7. Обновление "благосостояния" сектора (пример)
+        function updateSectorProsperity(sectors) {
+            // Можно добавить визуальные эффекты, например, если ресурсов > 3000
+            sectors.forEach(sector => {
+                if (sector.resources > 3000 && sector.type === 'controlled') {
+                    // можно добавить спецэффект или бонус
+                }
+            });
+        }
+
+        // 8. Получить массив секторов (расширяемый)
+        function getGalaxySectors() {
+            const baseSectors = [
+                { id: 1, x: 15, y: 20, name: "СИРИУС", type: "controlled", resources: 2000 },
+                { id: 2, x: 25, y: 60, name: "АЛЬФА ЦЕНТАВРА", type: "enemy", resources: 1500 },
+                { id: 3, x: 50, y: 30, name: "БЕТЕЛЬГЕЙЗЕ", type: "neutral", resources: 800 },
+                { id: 4, x: 70, y: 50, name: "ПРОЦИОН", type: "controlled", resources: 1200 },
+                { id: 5, x: 40, y: 70, name: "ВЕГА", type: "enemy", resources: 1800 },
+                { id: 6, x: 60, y: 20, name: "АРКТУР", type: "neutral", resources: 600 },
+                { id: 7, x: 80, y: 40, name: "РИГЕЛЬ", type: "controlled", resources: 2500 },
+                {
+                    id: 9001,
+                    x: 55, y: 80,
+                    name: "$XDUST-9001",
+                    type: "mission",
+                    resources: 9001,
+                    locked: currentEnergy < 3000,
+                    requiredEnergy: 3000
+                }
+            ];
+            // Специальные сектора
+            baseSectors.push({
+                id: 9999,
+                x: 75,
+                y: 85,
+                name: "$XDUST-9999",
+                type: "xdust9999",
+                resources: 9999,
+                description: "СЕКРЕТНЫЙ СЕКТОР",
+            });
+            baseSectors.push({
+                id: 7777,
+                x: 30,
+                y: 88,
+                name: "$XDUST",
+                type: "xdust",
+                resources: 7777,
+                description: "Уникальный сектор XDUST",
+                visited: false
+            });
+            return baseSectors;
         }
 
         // Анимация потока ресурсов с Сириуса
@@ -2011,6 +2149,11 @@
                 });
                 lastShot = now;
                 playShoot();
+
+                // --- Overheat effect ---
+                fireIntensity += 0.1;
+                if (fireIntensity > MAX_INTENSITY) fireIntensity = MAX_INTENSITY;
+                applyOverheatEffect(fireIntensity);
             }
         }
 
@@ -2189,6 +2332,29 @@
                     bullet.y -= bullet.speed * timeDilationFactor;
                     if (bullet.y < 0) bullets.splice(i, 1);
                 }
+            }
+        }
+
+        // === Перегрев оружия: управление и визуализация ===
+        function updateOverheat() {
+            // Плавное снижение интенсивности выстрела
+            fireIntensity *= 0.95;
+            if (fireIntensity < 0.01) fireIntensity = 0;
+
+            // Увеличение/уменьшение уровня перегрева
+            if (fireIntensity > 0.7) {
+                overheatLevel += 0.8; // быстрый рост перегрева при сильном огне
+            } else {
+                overheatLevel -= 0.5; // медленное охлаждение
+            }
+            if (overheatLevel < 0) overheatLevel = 0;
+            if (overheatLevel > MAX_OVERHEAT) overheatLevel = MAX_OVERHEAT;
+
+            // Визуальная индикация перегрева (например, фон/градиент)
+            const overheatBar = document.getElementById('overheatBar');
+            if (overheatBar) {
+                overheatBar.style.width = `${(overheatLevel / MAX_OVERHEAT) * 100}%`;
+                overheatBar.style.background = `linear-gradient(to right, #ff3300, #ffcc00)`;
             }
         }
 
@@ -2376,6 +2542,7 @@
 
         function gameLoop() {
             if (!gameRunning) return;
+            updateOverheat(); // плавное снижение fireIntensity
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawStars(); updateStars();
             drawParticles(); updateParticles();
