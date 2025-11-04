@@ -2142,6 +2142,9 @@
             playExplosion();
         }
 
+        let activeCombos = []; // массив для хранения активных бонусов
+        const COMBO_DURATION = 5000; // время действия комбо в мс
+
         function createPowerUp(x, y, forcedType = null) {
             if (forcedType) {
                 powerUps.push({ x: x - 10, y: y - 10, width: 24, height: 24, speed: 2, type: forcedType });
@@ -2156,12 +2159,49 @@
         function applyPowerUp(type) {
             playPowerup();
             player.flashTime = Date.now() + 300;
-            switch(type) {
-                case 'shield': shieldActive = true; setTimeout(() => { shieldActive = false; }, 10000); break;
-                case 'speed': speedBoostEnd = Date.now() + 10000; break;
-                case 'laser': laserModeEnd = Date.now() + 10000; break;
-                case 'megaShield': megaShieldStage = 2; megaShieldEnd = Date.now() + 15000; break;
-            }
+
+            // Добавляем бонус в массив комбо
+            activeCombos.push({ type: type, expires: Date.now() + COMBO_DURATION });
+
+            // Применяем эффекты с учётом текущих комбо
+            updateComboEffects();
+        }
+
+        function updateComboEffects() {
+            const now = Date.now();
+
+            // Удаляем истёкшие комбо
+            activeCombos = activeCombos.filter(combo => combo.expires > now);
+
+            // Сбрасываем все временные эффекты
+            shieldActive = false;
+            speedBoostEnd = 0;
+            laserModeEnd = 0;
+            megaShieldStage = 0;
+            megaShieldEnd = 0;
+
+            // Применяем комбинированные эффекты
+            let shieldCount = 0;
+            let speedCount = 0;
+            let laserCount = 0;
+            let megaCount = 0;
+
+            activeCombos.forEach(combo => {
+                switch(combo.type) {
+                    case 'shield': shieldCount++; break;
+                    case 'speed': speedCount++; break;
+                    case 'laser': laserCount++; break;
+                    case 'megaShield': megaCount++; break;
+                }
+            });
+
+            if (shieldCount > 0) shieldActive = true;
+            if (speedCount > 0) speedBoostEnd = now + 10000 + speedCount * 2000; // усиливаем скорость с комбо
+            if (laserCount > 0) laserModeEnd = now + 10000 + laserCount * 2000;  // усиливаем лазер
+            if (megaCount > 0) { megaShieldStage = 2; megaShieldEnd = now + 15000 + megaCount * 5000; }
+
+            // Можно добавить визуальные эффекты комбо
+            // например, усиленный flash или цветовую индикацию
         }
 
         // === РИСОВАНИЕ (ВСЁ ПОЛНОСТЬЮ) ===
@@ -2432,7 +2472,7 @@
         // --- Enemy Spawn System ---
         // Constants for spawn logic
     const ENEMY_SPAWN_INCREASE_INTERVAL = 15000;
-    const MIN_ENEMY_SPAWN_RATE = 0.01;
+    const MIN_ENEMY_SPAWN_RATE = 0.0055;
     // Lower initial spawn chances for elite enemies for smooth start
     const ENEMY_TYPES = [
         {
@@ -2440,7 +2480,7 @@
             baseChance: () => enemySpawnRate,
             minRate: 0,
             spawn: () => {
-                const size = 30 + Math.random() * 6;
+                const size = 30 + Math.random() * 10;
                 return {
                     x: Math.random() * (canvas.width - size),
                     y: -size,
