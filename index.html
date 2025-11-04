@@ -440,15 +440,13 @@
             
             <div id="fireBtn" class="control-btn">FIRE</div>
         </div>
-
         <div id="leftZone"></div>
         <div id="rightZone"></div>
     </div>
-
-    <!-- Galaxy Map -->
+    
     <div id="galaxyContainer">
         <div class="sirius-dust">✨ XDUST FROM SIRIUS! ✨</div>
-        
+
         <div class="resources-panel">
             <h3>XDUST Resources</h3>
             <div>⚡ Energy: <span id="energy">1500</span></div>
@@ -553,7 +551,7 @@
         <!-- Unified Bottom Button -->
         <div id="bottomPanel-galaxy" style="position: fixed; bottom: 0; right: 20px; z-index: 100; padding-bottom: 20px;">
             <button id="shooterBtn" class="control-btn" onclick="switchToShooter()">🎮</button>
-        </div>```````````````````````````````
+        </div>
     </div>
 
     <script>
@@ -2451,7 +2449,7 @@
                 };
             }
         },
-        {
+        {z
             type: 'code-drone',
             // Lower initial chance for first wave
             baseChance: () => Math.max(0.002, 0.004 + (enemySpawnRate * 0.08)),
@@ -2507,8 +2505,15 @@
         }
     ];
 
-    // Maximum number of enemies to spawn per frame
-    const MAX_ENEMIES_PER_FRAME = 2;
+    // --- Staged Enemy Spawn System ---
+    // Maximum number of enemies to spawn per frame (adjustable by stage)
+    let MAX_ENEMIES_PER_FRAME = 2;
+
+    // Track game start time for staging
+    let gameStartTime = Date.now();
+    let lastStage = 1;
+    let stageAnnounced = 0;
+    let bossSpawned = false;
 
     function spawnEnemyOfType(typeObj, spawnedCount, maxPerFrame) {
         // Try to spawn this enemy type based on its chance and minRate
@@ -2525,33 +2530,138 @@
         return 0.01 + (enemySpawnRate * 0.1);
     }
 
+    function getCurrentStage() {
+        // Stages determined by elapsed game time in ms
+        const elapsed = Date.now() - gameStartTime;
+        if (elapsed < 20000) return 1; // Stage 1: 0-20s
+        if (elapsed < 40000) return 2; // Stage 2: 20-40s
+        if (elapsed < 60000) return 3; // Stage 3: 40-60s
+        if (elapsed < 90000) return 4; // Stage 4: 60-90s
+        return 5; // Stage 5: Boss
+    }
+
+    function announceStage(stage) {
+        // Optional: Announce stage to player
+        if (stageAnnounced !== stage) {
+            stageAnnounced = stage;
+            let msg = "";
+            switch (stage) {
+                case 2: msg = "⚡ New enemy: Code-Drone!"; break;
+                case 3: msg = "⚡ New enemy: Splitter!"; break;
+                case 4: msg = "⚡ New enemy: Tank!"; break;
+                case 5: msg = "⚡ Boss incoming after wave!"; break;
+            }
+            if (msg && typeof tg !== "undefined" && tg && tg.showAlert) tg.showAlert(msg);
+        }
+    }
+
     function spawnEnemy() {
         // 1. Increase general spawn rate over time (capped)
         if (Date.now() - lastSpawnIncrease > ENEMY_SPAWN_INCREASE_INTERVAL) {
-            enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.1);
+            // Gradual chaos: increase spawn rate over time
+            enemySpawnRate = Math.min(enemySpawnRate + 0.005, 0.15);
             lastSpawnIncrease = Date.now();
         }
-        // 2. Try to spawn up to MAX_ENEMIES_PER_FRAME, prioritizing normal, then others
+
+        // Calculate current stage
+        const stage = getCurrentStage();
+        announceStage(stage);
+
+        // Gradually increase MAX_ENEMIES_PER_FRAME for later stages
+        if (stage === 1) MAX_ENEMIES_PER_FRAME = 1;
+        else if (stage === 2) MAX_ENEMIES_PER_FRAME = 1;
+        else if (stage === 3) MAX_ENEMIES_PER_FRAME = 2;
+        else if (stage === 4) MAX_ENEMIES_PER_FRAME = 3;
+        else MAX_ENEMIES_PER_FRAME = 4;
+
+        // 2. Staged enemy spawning
         let spawned = 0;
-        // Always try normal first
-        if (spawned < MAX_ENEMIES_PER_FRAME) {
-            if (spawnEnemyOfType(ENEMY_TYPES[0], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+        // Stage 1: only normal enemies
+        if (stage === 1) {
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[0], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
         }
-        // Try elite types, but limit total per frame
-        for (let i = 1; i < ENEMY_TYPES.length && spawned < MAX_ENEMIES_PER_FRAME; i++) {
-            if (spawnEnemyOfType(ENEMY_TYPES[i], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+        // Stage 2: normal + code-drones
+        else if (stage === 2) {
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[0], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[1], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
         }
-        // 3. Boss spawn logic (remains unchanged)
-        if (!bossActive && Date.now() - bossTimer > bossInterval) {
+        // Stage 3: normal + code-drones + splitters
+        else if (stage === 3) {
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[0], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[1], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[3], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+        }
+        // Stage 4: normal + code-drones + splitters + tanks
+        else if (stage === 4) {
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[0], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[1], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[3], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+            if (spawned < MAX_ENEMIES_PER_FRAME) {
+                if (spawnEnemyOfType(ENEMY_TYPES[2], spawned, MAX_ENEMIES_PER_FRAME)) spawned++;
+            }
+        }
+        // Stage 5: boss after wave is cleared
+        else if (stage >= 5) {
+            // If boss not spawned and all enemies are cleared, spawn boss
+            if (!bossActive && !bossSpawned && enemies.length === 0) {
+                bossActive = true;
+                bossSpawned = true;
+                boss = {
+                    x: canvas.width / 2 - 40,
+                    y: -90,
+                    width: 80,
+                    height: 80,
+                    speed: 1 + enemySpawnRate,
+                    hp: 20 + Math.floor(enemySpawnRate * 20),
+                    maxhp: 20 + Math.floor(enemySpawnRate * 20),
+                    type: 'boss',
+                    shootCooldown: 2000,
+                    lastShot: 0
+                };
+                if (typeof tg !== "undefined" && tg && tg.showAlert) tg.showAlert("⚡ BOSS INCOMING!");
+            }
+            // After boss defeated, reset for next possible boss
+            if (!bossActive && bossSpawned && enemies.length === 0) {
+                bossSpawned = false;
+                bossTimer = Date.now();
+                // Optionally, increase difficulty or loop stages
+                // gameStartTime = Date.now(); // Uncomment to loop stages
+            }
+            // Still allow some minor enemies to spawn for pressure
+            if (spawned < MAX_ENEMIES_PER_FRAME && Math.random() < 0.03) {
+                spawnEnemyOfType(ENEMY_TYPES[0], spawned, MAX_ENEMIES_PER_FRAME);
+            }
+        }
+        // If boss should spawn by old timer logic (for backward compatibility)
+        if (!bossActive && !bossSpawned && Date.now() - bossTimer > bossInterval) {
             bossActive = true;
+            bossSpawned = true;
             boss = {
                 x: canvas.width / 2 - 40,
                 y: -90,
                 width: 80,
                 height: 80,
                 speed: 1 + enemySpawnRate,
-                hp: 10 + Math.floor(enemySpawnRate * 10),
-                maxhp: 10 + Math.floor(enemySpawnRate * 10),
+                hp: 20 + Math.floor(enemySpawnRate * 20),
+                maxhp: 20 + Math.floor(enemySpawnRate * 20),
                 type: 'boss',
                 shootCooldown: 2000,
                 lastShot: 0
@@ -3069,6 +3179,16 @@
             score = 0; lives = 3; bullets = []; enemies = [];
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
+            // Reset spawn system for new run
+            gameStartTime = Date.now();
+            lastStage = 1;
+            stageAnnounced = 0;
+            bossSpawned = false;
+            enemySpawnRate = 0.03;
+            lastSpawnIncrease = Date.now();
+            bossTimer = Date.now();
+            bossActive = false;
+            boss = null;
             gameLoop();
         }
 
