@@ -1219,18 +1219,100 @@
             }, 500);
         }
 
-        // Обработка клика по миссии $XDUST-9001
+        // === $XDUST-9001 МЕГА-МИССИЯ: ВИЗУАЛЬНАЯ НАГРАДА И МЕГАРЕСУРСЫ ===
+        function rewardXDUST9001Resources(targetSector) {
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            const sirius = { x: 15, y: 20 }; // Sirius coordinates on map
+
+            const rewards = [
+                { type: 'energy', amount: currentEnergy },
+                { type: 'metals', amount: currentMetals },
+                { type: 'crystals', amount: currentCrystals }
+            ];
+
+            rewards.forEach(reward => {
+                const stream = document.createElement('div');
+                stream.style.position = 'absolute';
+                stream.style.left = `${sirius.x}%`;
+                stream.style.top = `${sirius.y}%`;
+                stream.style.width = '6px';
+                stream.style.height = '6px';
+                stream.style.background = reward.type === 'energy' ? '#00ffff' :
+                                         reward.type === 'metals' ? '#ffaa00' : '#ff00ff';
+                stream.style.borderRadius = '50%';
+                stream.style.boxShadow = `0 0 12px ${stream.style.background}`;
+                galaxyContainer.appendChild(stream);
+
+                const anim = stream.animate([
+                    { left: `${sirius.x}%`, top: `${sirius.y}%`, opacity: 1 },
+                    { left: `${targetSector.x}%`, top: `${targetSector.y}%`, opacity: 0 }
+                ], {
+                    duration: 2000,
+                    easing: 'ease-out'
+                });
+
+                anim.onfinish = () => {
+                    stream.remove();
+                    switch (reward.type) {
+                        case 'energy': currentEnergy += reward.amount; break;
+                        case 'metals': currentMetals += reward.amount; break;
+                        case 'crystals': currentCrystals += reward.amount; break;
+                    }
+                    displayResources();
+                    saveDataAll();
+                };
+            });
+        }
+
         function handleXDUST9001Click(isUnlocked, requiredEnergy) {
             if (!isUnlocked) {
-                alert(`🔒 Миссия заблокирована!\nТребуется энергия: ${requiredEnergy}`);
+                if (tg && tg.showAlert) {
+                    tg.showAlert(`🔒 Миссия заблокирована!\nТребуется энергия: ${requiredEnergy}`);
+                } else {
+                    alert(`🔒 Миссия заблокирована!\nТребуется энергия: ${requiredEnergy}`);
+                }
                 return;
             }
-            // Эффект запуска миссии
-            alert('🚀 МЕГА-МИССИЯ $XDUST-9001 ЗАПУЩЕНА!\nПолучите мегабонус ресурсов!');
-            // Получаем мегабонус: x2 к текущим ресурсам
-            updateGalaxyResources(currentEnergy); // x2 энергия
-            updateGalaxyResources(currentMetals); // x2 металлы
-            updateGalaxyResources(currentCrystals); // x2 кристаллы
+
+            if (tg && tg.showAlert) {
+                tg.showAlert('🚀 МЕГА-МИССИЯ $XDUST-9001 ЗАПУЩЕНА!\nЗавершение через 5 сек...');
+            } else {
+                alert('🚀 МЕГА-МИССИЯ $XDUST-9001 ЗАПУЩЕНА!\nЗавершение через 5 сек...');
+            }
+
+            const galaxyContainer = document.getElementById('galaxyContainer');
+            const burst = document.createElement('div');
+            burst.style.position = 'absolute';
+            burst.style.left = '50%';
+            burst.style.top = '50%';
+            burst.style.width = '200px';
+            burst.style.height = '200px';
+            burst.style.borderRadius = '50%';
+            burst.style.background = 'radial-gradient(circle, rgba(255,0,255,0.6), transparent 70%)';
+            burst.style.transform = 'translate(-50%, -50%)';
+            burst.style.animation = 'burstFade 2s ease-out forwards';
+            galaxyContainer.appendChild(burst);
+            setTimeout(() => burst.remove(), 2000);
+
+            setTimeout(() => {
+                const sector = { type: 'mission', resources: 9001, x: 55, y: 80 };
+                sector.type = 'controlled';
+
+                rewardXDUST9001Resources(sector);
+
+                const xsdcReward = 5000;
+                currentXSDC += xsdcReward;
+                displayResources();
+                saveDataAll();
+
+                if (tg && tg.showAlert) {
+                    tg.showAlert(`✅ Миссия завершена! Получено +${xsdcReward} $XSDC`);
+                } else {
+                    alert(`✅ Миссия завершена! Получено +${xsdcReward} $XSDC`);
+                }
+
+                initGalaxyMap();
+            }, 5000);
         }
 
         function createGalaxyStars() {
