@@ -397,7 +397,7 @@
     </style>
 </head>
 <body>
-    <!-- Космический шутер -->
+    <!-- Space Shooter -->
     <div id="gameContainer">
         <div class="stars" id="stars"></div>
         
@@ -408,23 +408,23 @@
         
         <div id="startScreen">
             <h1>🚀 SPACEDUST</h1>
-            <p>Defend Galaxy!</p>
-            <p>Dust Your Enemy and Collect Bonuses</p>
+            <p>Defend the Galaxy!</p>
+            <p>Dust your enemies and collect bonuses</p>
             <div class="instructions">Use Buttons to Move and Fire</div>
             <div class="power-ups"><div class="power-up">S</div><div class="power-up">P</div><div class="power-up">L</div></div>
-            <button class="btn" ontouchstart="startGame()" onclick="startGame()">СТАРТ</button>
+            <button class="btn" ontouchstart="startGame()" onclick="startGame()">START</button>
             <div style="margin-top: 15px;">
-                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Галактическая карта</button>
+                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Galaxy Map</button>
             </div>
         </div>
         
         <div id="gameOver">
-            <h1>Mission Fail</h1>
+            <h1>Mission Failed</h1>
             <p>Score: <span id="finalScore">0</span></p>
-            <p>Sector under enemy control!</p>
-            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">ПОВТОРИТЬ</button>
+            <p>Sector captured by enemy!</p>
+            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">RESTART</button>
             <div style="margin-top: 15px;">
-                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Галактическая карта</button>
+                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Galaxy Map</button>
             </div>
         </div>
         
@@ -445,16 +445,16 @@
         <div id="rightZone"></div>
     </div>
 
-    <!-- Галактическая карта -->
+    <!-- Galaxy Map -->
     <div id="galaxyContainer">
-        <div class="sirius-dust">✨ XDUST С СИРИУСА! ✨</div>
+        <div class="sirius-dust">✨ XDUST FROM SIRIUS! ✨</div>
         
         <div class="resources-panel">
-            <h3>Ресурсы XDUST</h3>
-            <div>⚡ Энергия: <span id="energy">1500</span></div>
-            <div>🪐 Металлы: <span id="metals">800</span></div>
-            <div>💎 Кристаллы: <span id="crystals">300</span></div>
-            <div>🚀 Очки: <span id="galaxyScore">0</span></div>
+            <h3>XDUST Resources</h3>
+            <div>⚡ Energy: <span id="energy">1500</span></div>
+            <div>🪐 Metals: <span id="metals">800</span></div>
+            <div>💎 Crystals: <span id="crystals">300</span></div>
+            <div>🚀 Score: <span id="galaxyScore">0</span></div>
         </div>
         
         <div id="achievementsPanel" style="
@@ -471,12 +471,12 @@
             overflow-y: auto;
             z-index: 10;
         ">
-            <h3>🏆 Достижения</h3>
+            <h3>🏆 Achievements</h3>
             <div id="achievementsList"></div>
         </div>
 
         <div class="mission-alert">
-            🚨 Сириус передает XDUST для усиления флота!
+            🚨 Sirius delivers XDUST to boost your fleet!
         </div>
 
         <!-- Upgrade Shop Modal Button -->
@@ -497,7 +497,7 @@
             cursor: pointer;
             letter-spacing: 1px;
             transition: box-shadow 0.2s;
-        " onclick="openUpgradeShopModal()">🛠️ Апгрейды</button>
+        " onclick="openUpgradeShopModal()">🛠️ Upgrades</button>
         <!-- Upgrade Shop Modal (Full Screen) -->
         <div id="upgradeShopModal" style="
             display: none;
@@ -539,18 +539,18 @@
                     box-shadow: 0 0 10px #ff00ff;
                     cursor: pointer;
                     z-index: 2;
-                " aria-label="Закрыть">✕</button>
+                " aria-label="Close">✕</button>
                 <h3 style="color: #ff00ff; text-align: center; margin-bottom: 14px; text-shadow: 0 0 12px #ff00ff;">
-                    🛠️ Модернизации XDUST
+                    🛠️ XDUST Upgrades
                 </h3>
                 <div id="upgradesListModal"></div>
                 <p style="font-size: 13px; margin-top: 14px; color: #aaa; text-align: center;">
-                    ⚡ Энергия: <span id="shopEnergyModal" class="resource-value">0</span>
+                    ⚡ Energy: <span id="shopEnergyModal" class="resource-value">0</span>
                 </p>
             </div>
         </div>
-        
-        <!-- УНИФИЦИРОВАННАЯ КНОПКА ВНИЗУ -->
+               
+        <!-- Unified Bottom Button -->
         <div id="bottomPanel-galaxy" style="position: fixed; bottom: 0; right: 20px; z-index: 100; padding-bottom: 20px;">
             <button id="shooterBtn" class="control-btn" onclick="switchToShooter()">🎮</button>
         </div>
@@ -1099,224 +1099,232 @@
         }
 
         // === Новый initGalaxyMap с дополнительными событиями и функциями ===
-        function initGalaxyMap() {
-            loadUpgradeData();
-            loadDataAll();
-            applyUpgradeEffects();
-            displayResources();
+function initGalaxyMap() {
+    loadUpgradeData();
+    loadDataAll();
+    applyUpgradeEffects();
+    displayResources();
 
-            const galaxyContainer = document.getElementById('galaxyContainer');
-            Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
-            Array.from(galaxyContainer.querySelectorAll('div'))
-                .forEach(el => {
-                    if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
-                        el.remove();
-                    }
-                });
-
-            // Получаем массив секторов через функцию (можно расширять)
-            const sectors = getGalaxySectors();
-
-            // Динамические события: шанс появления ресурсного астероида, рейда, предложения торговли, сигнала бедствия и т.д.
-            if (Math.random() < 0.18) spawnResourceAsteroid(sectors, galaxyContainer);
-            if (Math.random() < 0.13) enemyRaid(sectors, galaxyContainer);
-            if (Math.random() < 0.11) offerTrade(sectors, galaxyContainer);
-            if (Math.random() < 0.09) triggerDistressSignal(sectors, galaxyContainer);
-            if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
-
-            // Производство ресурсов и обновление благосостояния секторов (пример)
-            produceSectorResources(sectors);
-            updateSectorProsperity(sectors);
-
-            sectors.forEach(sector => {
-                let sectorElement = document.createElement('div');
-                let adjustedY = sector.y;
-                if (sector.name === "АЛЬФА ЦЕНТАВРА") adjustedY = 55;
-                if (sector.name === "$XDUST" || sector.name === "$XDUST-9999" || sector.name === "$XDUST-9001") {
-                    adjustedY -= 8;
-                    if (adjustedY < 0) adjustedY = 0;
-                }
-                if (sector.type === "mission") {
-                    const isUnlocked = !sector.locked;
-                    sectorElement.className = isUnlocked ? "sector mission-unlocked" : "sector mission-locked";
-                    sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${adjustedY}%`;
-                    sectorElement.innerHTML = `
-                        <div style="text-align:center; font-size:11px;">
-                            <strong>${sector.name}</strong><br>
-                            ${isUnlocked ? "🚀 МЕГА-МИССИЯ" : "🔒 ЗАБЛОКИРОВАНО"}<br>
-                            ⚡${sector.resources}
-                        </div>
-                    `;
-                    sectorElement.addEventListener('click', () => {
-                        if (sector.name === "$XDUST-9001") {
-                            if (currentEnergy >= 3000) {
-                                if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                    tg.showAlert("🚀 МЕГА-МИССИЯ ЗАПУЩЕНА!\nЗавершение через 5 сек...");
-                                } else {
-                                    alert("🚀 МЕГА-МИССИЯ ЗАПУЩЕНА!\nЗавершение через 5 сек...");
-                                }
-                                const burst = document.createElement('div');
-                                burst.style.position = 'absolute';
-                                burst.style.left = '50%';
-                                burst.style.top = '50%';
-                                burst.style.width = '200px';
-                                burst.style.height = '200px';
-                                burst.style.borderRadius = '50%';
-                                burst.style.background = 'radial-gradient(circle, rgba(255,0,255,0.6), transparent 70%)';
-                                burst.style.transform = 'translate(-50%, -50%)';
-                                burst.style.animation = 'burstFade 2s ease-out forwards';
-                                galaxyContainer.appendChild(burst);
-                                setTimeout(() => burst.remove(), 2000);
-                                attemptCapture(sector.id, sector, () => {
-                                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                        tg.showAlert("✅ Миссия завершена! Получено $XSDC!");
-                                    } else {
-                                        alert("✅ Миссия завершена! Получено $XSDC!");
-                                    }
-                                });
-                            } else {
-                                if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                    tg.showAlert(`🔒 Нужно 3000 ⚡\nУ вас: ${currentEnergy}`);
-                                } else {
-                                    alert(`🔒 Нужно 3000 ⚡\nУ вас: ${currentEnergy}`);
-                                }
-                            }
-                        }
-                    });
-                } else if (sector.type === "xdust9999") {
-                    sectorElement.className = "sector xdust9999-sector";
-                    sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${adjustedY}%`;
-                    sectorElement.innerHTML = `
-                        <div style="text-align:center; font-size:13px;">
-                            <strong style="color:#ff2222; text-shadow:0 0 12px #ff2222;">${sector.name}</strong><br>
-                            <span style="color:#ff5555;">${sector.description}</span><br>
-                            <span style="color:#ff2222;">⚡${sector.resources}</span>
-                        </div>
-                    `;
-                    sectorElement.style.boxShadow = "0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222";
-                    sectorElement.style.background = "radial-gradient(circle at 55% 60%, #ff3333 0%, #990000 70%, transparent 100%)";
-                    sectorElement.style.border = "3px solid #ff2222";
-                    sectorElement.style.animation = "xdust9999-glow 1.3s infinite alternate";
-                    sectorElement.style.zIndex = 11;
-                    let tail = document.createElement('div');
-                    tail.style.position = 'absolute';
-                    tail.style.left = '50%';
-                    tail.style.top = '100%';
-                    tail.style.transform = 'translateX(-50%)';
-                    tail.style.width = '18px';
-                    tail.style.height = '80px';
-                    tail.style.background = 'linear-gradient(180deg, rgba(255,0,0,0.7) 0%, rgba(255,0,0,0.1) 100%)';
-                    tail.style.borderRadius = '50% 50% 70% 70%/30% 30% 100% 100%';
-                    tail.style.filter = 'blur(2.7px)';
-                    tail.style.pointerEvents = 'none';
-                    tail.style.zIndex = 10;
-                    tail.style.opacity = "0.85";
-                    tail.className = "xdust9999-tail";
-                    sectorElement.appendChild(tail);
-                    sectorElement.addEventListener('click', () => {
-                        handleXDUSTEncounter(sector);
-                    });
-                } else if (sector.type === "xdust") {
-                    sectorElement.className = "sector xdust-sector";
-                    sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${adjustedY}%`;
-                    sectorElement.innerHTML = `
-                        <div style="text-align:center; font-size:13px;">
-                            <strong style="color:#00ffff; text-shadow:0 0 14px #00ffff;">${sector.name}</strong><br>
-                            <span style="color:#00ffff;">${sector.description}</span><br>
-                            <span style="color:#00ffff;">⚡${sector.resources}</span>
-                        </div>
-                    `;
-                    sectorElement.style.boxShadow = "0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff";
-                    sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00ffff 0%, #005577 70%, transparent 100%)";
-                    sectorElement.style.border = "3px solid #00ffff";
-                    sectorElement.style.animation = "xdust-glow 1.7s infinite alternate";
-                    sectorElement.style.zIndex = 12;
-                    let ring = document.createElement('div');
-                    ring.style.position = 'absolute';
-                    ring.style.left = '-15%';
-                    ring.style.top = '-15%';
-                    ring.style.width = '130%';
-                    ring.style.height = '130%';
-                    ring.style.border = '2.5px solid #00ffff';
-                    ring.style.borderRadius = '50%';
-                    ring.style.opacity = '0.5';
-                    ring.style.pointerEvents = 'none';
-                    ring.style.animation = "xdust-ring 2.7s infinite linear";
-                    ring.className = "xdust-ring";
-                    sectorElement.appendChild(ring);
-                    sectorElement.addEventListener('click', () => {
-                        handleXDUSTEncounter(sector);
-                    });
-                } else {
-                    sectorElement.className = `sector ${sector.type}`;
-                    sectorElement.style.left = `${sector.x}%`;
-                    sectorElement.style.top = `${adjustedY}%`;
-                    sectorElement.innerHTML = `
-                        <div style="text-align: center; font-size: 10px;">
-                            <strong>${sector.name}</strong><br>
-                            ⚡${sector.resources}
-                        </div>
-                    `;
-                    sectorElement.addEventListener('click', () => {
-                        if (sector.type === 'enemy' || sector.type === 'neutral') {
-                            if (sector.type !== 'controlled') {
-                                attemptCapture(sector.id, sector, () => {
-                                    if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                                        tg.showAlert(`✅ Сектор захвачен! Бонус: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
-                                    } else {
-                                        alert(`✅ Сектор захвачен! Бонус: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
-                                    }
-                                });
-                            }
-                        } else {
-                            alert(`🚀 Выбран сектор: ${sector.name}\n💎 Ресурсы: ${sector.resources} XDUST`);
-                        }
-                        if (sector.type === 'enemy') {
-                            createResourceStream(sector);
-                        }
-                    });
-                }
-                galaxyContainer.appendChild(sectorElement);
-            });
-            // Добавим CSS-анимации для секторов $XDUST-9999 и $XDUST (однократно)
-            if (!document.getElementById('xdust9999-glow-style')) {
-                const style = document.createElement('style');
-                style.id = 'xdust9999-glow-style';
-                style.innerHTML = `
-                @keyframes xdust9999-glow {
-                    0% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
-                    50% { box-shadow: 0 0 70px 25px #ff2222, 0 0 150px 60px #ff2222; opacity:1;}
-                    100% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
-                }
-                @keyframes xdust-glow {
-                    0% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
-                    50% { box-shadow: 0 0 80px 25px #00ffff, 0 0 160px 60px #00ffff; opacity:1;}
-                    100% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
-                }
-                @keyframes xdust-ring {
-                    0% { transform: scale(1); opacity: 0.5;}
-                    70% { transform: scale(1.3); opacity: 0.9;}
-                    100% { transform: scale(1.7); opacity: 0;}
-                }
-                `;
-                document.head.appendChild(style);
+    const galaxyContainer = document.getElementById('galaxyContainer');
+    Array.from(galaxyContainer.querySelectorAll('.sector')).forEach(el => el.remove());
+    Array.from(galaxyContainer.querySelectorAll('div'))
+        .forEach(el => {
+            if (!el.className && !el.id && el.style && el.style.position === 'absolute' && el.style.background === 'white') {
+                el.remove();
             }
-            if (!galaxyContainer.querySelector('.galaxy-star')) {
-                createGalaxyStars();
-            }
-            if (!galaxyContainer._xdustAutoTransfer) {
-                galaxyContainer._xdustAutoTransfer = setInterval(() => {
-                    const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.type !== "mission");
-                    const randomSector = filtered[Math.floor(Math.random() * filtered.length)];
-                    if (randomSector) {
-                        createResourceStream(randomSector);
-                    }
-                }, 5000);
-            }
+        });
+
+    // Get sectors array
+    const sectors = getGalaxySectors();
+
+    // Dynamic events
+    if (Math.random() < 0.18) spawnResourceAsteroid(sectors, galaxyContainer);
+    if (Math.random() < 0.13) enemyRaid(sectors, galaxyContainer);
+    if (Math.random() < 0.11) offerTrade(sectors, galaxyContainer);
+    if (Math.random() < 0.09) triggerDistressSignal(sectors, galaxyContainer);
+    if (Math.random() < 0.07) buildDefense(sectors, galaxyContainer);
+
+    // Produce resources and update prosperity
+    produceSectorResources(sectors);
+    updateSectorProsperity(sectors);
+
+    sectors.forEach(sector => {
+        let sectorElement = document.createElement('div');
+        let adjustedY = sector.y;
+        if (sector.name === "АЛЬФА ЦЕНТАВРА" || sector.name === "ALPHA CENTAURI") adjustedY = 55; // Support both
+        if (sector.name === "$XDUST" || sector.name === "$XDUST-9999" || sector.name === "$XDUST-9001") {
+            adjustedY -= 8;
+            if (adjustedY < 0) adjustedY = 0;
         }
+        if (sector.type === "mission") {
+            const isUnlocked = !sector.locked;
+            sectorElement.className = isUnlocked ? "sector mission-unlocked" : "sector mission-locked";
+            sectorElement.style.left = `${sector.x}%`;
+            sectorElement.style.top = `${adjustedY}%`;
+            sectorElement.innerHTML = `
+                <div style="text-align:center; font-size:11px;">
+                    <strong>${sector.name}</strong><br>
+                    ${isUnlocked ? "🚀 MEGA MISSION" : "🔒 LOCKED"}<br>
+                    ⚡${sector.resources}
+                </div>
+            `;
+            sectorElement.addEventListener('click', () => {
+                if (sector.name === "$XDUST-9001") {
+                    if (currentEnergy >= 3000) {
+                        if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                            tg.showAlert("🚀 MEGA MISSION STARTED!\nFinishing in 5 sec...");
+                        } else {
+                            alert("🚀 MEGA MISSION STARTED!\nFinishing in 5 sec...");
+                        }
+                        const burst = document.createElement('div');
+                        burst.style.position = 'absolute';
+                        burst.style.left = '50%';
+                        burst.style.top = '50%';
+                        burst.style.width = '200px';
+                        burst.style.height = '200px';
+                        burst.style.borderRadius = '50%';
+                        burst.style.background = 'radial-gradient(circle, rgba(255,0,255,0.6), transparent 70%)';
+                        burst.style.transform = 'translate(-50%, -50%)';
+                        burst.style.animation = 'burstFade 2s ease-out forwards';
+                        galaxyContainer.appendChild(burst);
+                        setTimeout(() => burst.remove(), 2000);
+                        attemptCapture(sector.id, sector, () => {
+                            if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                tg.showAlert("✅ Mission Completed! $XSDC received!");
+                            } else {
+                                alert("✅ Mission Completed! $XSDC received!");
+                            }
+                        });
+                    } else {
+                        if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                            tg.showAlert(`🔒 Need 3000 ⚡\nYou have: ${currentEnergy}`);
+                        } else {
+                            alert(`🔒 Need 3000 ⚡\nYou have: ${currentEnergy}`);
+                        }
+                    }
+                }
+            });
+        } else if (sector.type === "xdust9999") {
+            sectorElement.className = "sector xdust9999-sector";
+            sectorElement.style.left = `${sector.x}%`;
+            sectorElement.style.top = `${adjustedY}%`;
+            sectorElement.innerHTML = `
+                <div style="text-align:center; font-size:13px;">
+                    <strong style="color:#ff2222; text-shadow:0 0 12px #ff2222;">${sector.name}</strong><br>
+                    <span style="color:#ff5555;">${sector.description && sector.description === "СЕКРЕТНЫЙ СЕКТОР" ? "SECRET SECTOR" : sector.description}</span><br>
+                    <span style="color:#ff2222;">⚡${sector.resources}</span>
+                </div>
+            `;
+            sectorElement.style.boxShadow = "0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222";
+            sectorElement.style.background = "radial-gradient(circle at 55% 60%, #ff3333 0%, #990000 70%, transparent 100%)";
+            sectorElement.style.border = "3px solid #ff2222";
+            sectorElement.style.animation = "xdust9999-glow 1.3s infinite alternate";
+            sectorElement.style.zIndex = 11;
+            let tail = document.createElement('div');
+            tail.style.position = 'absolute';
+            tail.style.left = '50%';
+            tail.style.top = '100%';
+            tail.style.transform = 'translateX(-50%)';
+            tail.style.width = '18px';
+            tail.style.height = '80px';
+            tail.style.background = 'linear-gradient(180deg, rgba(255,0,0,0.7) 0%, rgba(255,0,0,0.1) 100%)';
+            tail.style.borderRadius = '50% 50% 70% 70%/30% 30% 100% 100%';
+            tail.style.filter = 'blur(2.7px)';
+            tail.style.pointerEvents = 'none';
+            tail.style.zIndex = 10;
+            tail.style.opacity = "0.85";
+            tail.className = "xdust9999-tail";
+            sectorElement.appendChild(tail);
+            sectorElement.addEventListener('click', () => {
+                handleXDUSTEncounter(sector);
+            });
+        } else if (sector.type === "xdust") {
+            sectorElement.className = "sector xdust-sector";
+            sectorElement.style.left = `${sector.x}%`;
+            sectorElement.style.top = `${adjustedY}%`;
+            sectorElement.innerHTML = `
+                <div style="text-align:center; font-size:13px;">
+                    <strong style="color:#00ffff; text-shadow:0 0 14px #00ffff;">${sector.name}</strong><br>
+                    <span style="color:#00ffff;">${sector.description && sector.description === "Уникальный сектор XDUST" ? "Unique XDUST Sector" : sector.description}</span><br>
+                    <span style="color:#00ffff;">⚡${sector.resources}</span>
+                </div>
+            `;
+            sectorElement.style.boxShadow = "0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff";
+            sectorElement.style.background = "radial-gradient(circle at 50% 60%, #00ffff 0%, #005577 70%, transparent 100%)";
+            sectorElement.style.border = "3px solid #00ffff";
+            sectorElement.style.animation = "xdust-glow 1.7s infinite alternate";
+            sectorElement.style.zIndex = 12;
+            let ring = document.createElement('div');
+            ring.style.position = 'absolute';
+            ring.style.left = '-15%';
+            ring.style.top = '-15%';
+            ring.style.width = '130%';
+            ring.style.height = '130%';
+            ring.style.border = '2.5px solid #00ffff';
+            ring.style.borderRadius = '50%';
+            ring.style.opacity = '0.5';
+            ring.style.pointerEvents = 'none';
+            ring.style.animation = "xdust-ring 2.7s infinite linear";
+            ring.className = "xdust-ring";
+            sectorElement.appendChild(ring);
+            sectorElement.addEventListener('click', () => {
+                handleXDUSTEncounter(sector);
+            });
+        } else {
+            sectorElement.className = `sector ${sector.type}`;
+            sectorElement.style.left = `${sector.x}%`;
+            sectorElement.style.top = `${adjustedY}%`;
+            sectorElement.innerHTML = `
+                <div style="text-align: center; font-size: 10px;">
+                    <strong>${sector.name === "СИРИУС" ? "SIRIUS"
+                        : sector.name === "АЛЬФА ЦЕНТАВРА" ? "ALPHA CENTAURI"
+                        : sector.name === "БЕТЕЛЬГЕЙЗЕ" ? "BETELGEUSE"
+                        : sector.name === "ПРОЦИОН" ? "PROCYON"
+                        : sector.name === "ВЕГА" ? "VEGA"
+                        : sector.name === "АРКТУР" ? "ARCTURUS"
+                        : sector.name === "РИГЕЛЬ" ? "RIGEL"
+                        : sector.name}
+                    </strong><br>
+                    ⚡${sector.resources}
+                </div>
+            `;
+            sectorElement.addEventListener('click', () => {
+                if (sector.type === 'enemy' || sector.type === 'neutral') {
+                    if (sector.type !== 'controlled') {
+                        attemptCapture(sector.id, sector, () => {
+                            if (typeof tg !== "undefined" && tg && tg.showAlert) {
+                                tg.showAlert(`✅ Sector captured! Bonus: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                            } else {
+                                alert(`✅ Sector captured! Bonus: +${Math.floor((sector.resources||0)*0.1)} $XSDC`);
+                            }
+                        });
+                    }
+                } else {
+                    alert(`🚀 Selected sector: ${sector.name}\n💎 Resources: ${sector.resources} XDUST`);
+                }
+                if (sector.type === 'enemy') {
+                    createResourceStream(sector);
+                }
+            });
+        }
+        galaxyContainer.appendChild(sectorElement);
+    });
+    // Add CSS animations for XDUST-9999 and XDUST sectors (once)
+    if (!document.getElementById('xdust9999-glow-style')) {
+        const style = document.createElement('style');
+        style.id = 'xdust9999-glow-style';
+        style.innerHTML = `
+        @keyframes xdust9999-glow {
+            0% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+            50% { box-shadow: 0 0 70px 25px #ff2222, 0 0 150px 60px #ff2222; opacity:1;}
+            100% { box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222; opacity:0.93;}
+        }
+        @keyframes xdust-glow {
+            0% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
+            50% { box-shadow: 0 0 80px 25px #00ffff, 0 0 160px 60px #00ffff; opacity:1;}
+            100% { box-shadow: 0 0 40px 10px #00ffff, 0 0 80px 30px #00ffff; opacity:0.8;}
+        }
+        @keyframes xdust-ring {
+            0% { transform: scale(1); opacity: 0.5;}
+            70% { transform: scale(1.3); opacity: 0.9;}
+            100% { transform: scale(1.7); opacity: 0;}
+        }
+        `;
+        document.head.appendChild(style);
+    }
+    if (!galaxyContainer.querySelector('.galaxy-star')) {
+        createGalaxyStars();
+    }
+    if (!galaxyContainer._xdustAutoTransfer) {
+        galaxyContainer._xdustAutoTransfer = setInterval(() => {
+            const filtered = sectors.filter(s => s.name !== "СИРИУС" && s.name !== "SIRIUS" && s.type !== "mission");
+            const randomSector = filtered[Math.floor(Math.random() * filtered.length)];
+            if (randomSector) {
+                createResourceStream(randomSector);
+            }
+        }, 5000);
+    }
+}
 
         
         // === Дополнительные функции для событий на галактической карте ===
@@ -1336,9 +1344,9 @@
             asteroid.style.border = '2px solid #ffaa00';
             asteroid.style.boxShadow = '0 0 20px #ffaa00, 0 0 60px #ffaa00';
             asteroid.style.zIndex = 100;
-            asteroid.innerHTML = '<div style="text-align:center;font-size:10px;color:#ffaa00;">🪨 АСТЕРОИД<br>+РЕСУРСЫ</div>';
+            asteroid.innerHTML = '<div style="text-align:center;font-size:10px;color:#ffaa00;">🪨 ASTEROID<br>+RESOURCES</div>';
             asteroid.addEventListener('click', () => {
-                // Добавляем разные ресурсы
+                // Add resources
                 const base = 400 + Math.floor(Math.random() * 400);
                 currentEnergy += base;
                 currentMetals += Math.floor(base * 0.7);
@@ -1347,7 +1355,7 @@
                 saveDataAll && saveDataAll();
                 asteroid.remove();
                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert("🪨 Собран ресурсный астероид! Получено ресурсов.");
+                    tg.showAlert("🪨 Resource asteroid collected! Resources gained.");
                 }
             });
             container.appendChild(asteroid);
@@ -1370,9 +1378,9 @@
             raid.style.border = '2px dashed #ff2222';
             raid.style.boxShadow = '0 0 30px #ff2222';
             raid.style.zIndex = 110;
-            raid.innerHTML = '<div style="text-align:center;font-size:10px;color:#fff;">⚔️ РЕЙД<br>-РЕСУРСЫ</div>';
+            raid.innerHTML = '<div style="text-align:center;font-size:10px;color:#fff;">⚔️ RAID<br>-RESOURCES</div>';
             raid.addEventListener('click', () => {
-                // Снимаем часть ресурсов (равномерно)
+                // Lose resources
                 const loss = 250 + Math.floor(Math.random() * 200);
                 currentEnergy = Math.max(0, currentEnergy - loss);
                 currentMetals = Math.max(0, currentMetals - Math.floor(loss * 0.6));
@@ -1381,7 +1389,7 @@
                 saveDataAll && saveDataAll();
                 raid.remove();
                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert("⚔️ Отражён вражеский рейд! Ресурсы уменьшены.");
+                    tg.showAlert("⚔️ Enemy raid repelled! Resources decreased.");
                 }
             });
             container.appendChild(raid);
@@ -1404,9 +1412,9 @@
             trade.style.border = '2px solid #00ffaa';
             trade.style.boxShadow = '0 0 20px #00ffaa';
             trade.style.zIndex = 120;
-            trade.innerHTML = '<div style="text-align:center;font-size:10px;color:#00ffaa;">🤝 ТОРГОВЛЯ<br>+/-РЕСУРСЫ</div>';
+            trade.innerHTML = '<div style="text-align:center;font-size:10px;color:#00ffaa;">🤝 TRADE<br>+/-RESOURCES</div>';
             trade.addEventListener('click', () => {
-                // Случайный обмен: либо прибыль, либо убыток
+                // Random trade: gain or loss
                 const isGood = Math.random() < 0.5;
                 if (isGood) {
                     currentEnergy += 200;
@@ -1421,7 +1429,7 @@
                 saveDataAll && saveDataAll();
                 trade.remove();
                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert(isGood ? "🤝 Удачная сделка! Получено ресурсов." : "🤝 Неудачная сделка! Ресурсы потеряны.");
+                    tg.showAlert(isGood ? "🤝 Successful trade! Resources gained." : "🤝 Bad deal! Resources lost.");
                 }
             });
             container.appendChild(trade);
@@ -1444,9 +1452,9 @@
             distress.style.border = '2px solid #ff00ff';
             distress.style.boxShadow = '0 0 18px #ff00ff';
             distress.style.zIndex = 130;
-            distress.innerHTML = '<div style="text-align:center;font-size:10px;color:#ff00ff;">🆘 СИГНАЛ<br>+/-РЕСУРСЫ</div>';
+            distress.innerHTML = '<div style="text-align:center;font-size:10px;color:#ff00ff;">🆘 DISTRESS<br>+/-RESOURCES</div>';
             distress.addEventListener('click', () => {
-                // 70% шанс получить ресурсы, 30% - потерять
+                // 70% chance gain, 30% lose
                 const isRescue = Math.random() < 0.7;
                 if (isRescue) {
                     currentEnergy += 150;
@@ -1461,7 +1469,7 @@
                 saveDataAll && saveDataAll();
                 distress.remove();
                 if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                    tg.showAlert(isRescue ? "🆘 Спасён корабль! Получены ресурсы." : "🆘 Корабль не удалось спасти! Ресурсы потеряны.");
+                    tg.showAlert(isRescue ? "🆘 Ship rescued! Resources gained." : "🆘 Ship lost! Resources lost.");
                 }
             });
             container.appendChild(distress);
@@ -1484,22 +1492,22 @@
             defense.style.border = '2px solid #00aaff';
             defense.style.boxShadow = '0 0 18px #00aaff';
             defense.style.zIndex = 140;
-            defense.innerHTML = '<div style="text-align:center;font-size:10px;color:#00aaff;">🛡️ ОБОРОНА<br>-ЭНЕРГИЯ</div>';
+            defense.innerHTML = '<div style="text-align:center;font-size:10px;color:#00aaff;">🛡️ DEFENSE<br>-ENERGY</div>';
             defense.addEventListener('click', () => {
                 if (currentEnergy > 300) {
                     currentEnergy -= 300;
-                    // Бонус: временно повышаем доход с майнинга
+                    // Bonus: temporarily boost mining
                     if (!window._defenseBonus) window._defenseBonus = 0;
                     window._defenseBonus += 0.05;
                     setTimeout(() => { window._defenseBonus -= 0.05; }, 15000);
                     displayResources();
                     saveDataAll && saveDataAll();
                     if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                        tg.showAlert("🛡️ Оборона построена! Майнинг ускорен на 15 сек.");
+                        tg.showAlert("🛡️ Defense built! Mining boosted for 15 sec.");
                     }
                 } else {
                     if (typeof tg !== "undefined" && tg && tg.showAlert) {
-                        tg.showAlert("Недостаточно энергии для обороны!");
+                        tg.showAlert("Not enough energy for defense!");
                     }
                 }
                 defense.remove();
