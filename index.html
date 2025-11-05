@@ -3117,6 +3117,28 @@
                                 powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
                             }
                         } else {
+                            // add scoring for non-tank enemies
+                            let gained = 0;
+                            switch ((enemy && enemy.type) || 'normal') {
+                                case 'code-drone':
+                                    gained = 25;
+                                    break;
+                                case 'splitter':
+                                    gained = 15;
+                                    break;
+                                case 'mini-splitter':
+                                    gained = 8;
+                                    break;
+                                case 'normal':
+                                default:
+                                    gained = 10;
+                                    break;
+                            }
+
+                            // apply score and visual/audio feedback
+                            score += Math.round(gained);
+                            updateUI();
+
                             enemiesToRemove.push(e);
                             createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, null, 20);
                             powerUpsToCreate.push({x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2});
@@ -3391,6 +3413,8 @@
             if (e.code === 'ArrowRight') setRight(false);
             if (e.code === 'Space') setFire(false);
         });
+
+        
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
