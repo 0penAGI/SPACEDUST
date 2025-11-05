@@ -1,681 +1,662 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPACEDUST - Cosmic Strategy</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        
-        /* Улучшенная система безопасных отступов */
-        :root {
-            --safe-top: env(safe-area-inset-top, 40px);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
-            --ui-top-offset: calc(80px + var(--safe-top));
-            --modal-top-offset: calc(60px + var(--safe-top));
-            --panel-bottom-offset: calc(20px + var(--safe-bottom));
-        }
-        
-        body {
-            background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #000000 100%);
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Orbitron', monospace;
-            overflow: hidden;
-            touch-action: none;
-            color: #fff;
-        }
-       
-        /* Общие стили */
-        #gameContainer, #galaxyContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-       
-        #galaxyContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            display: none;
-            overflow: hidden;
-            z-index: 5;
-        }
-       
-        canvas {
-            border: 0.314px solid rgba(0, 255, 255, 0.7);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2);
-            background: #000;
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 4px;
-        }
-       
-        /* Стили для шутера */
-        #ui {
-            position: absolute;
-            top: var(--ui-top-offset);
-            left: 50%;
-            transform: translateX(-50%);
-            color: #00ffff;
-            font-size: 16px;
-            text-shadow: 0 0 10px #00ffff;
-            z-index: 10;
-            pointer-events: none;
-            background: rgba(0, 20, 30, 0.7);
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 255, 0.5);
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            animation: ui-glow 2s infinite alternate;
-        }
-       
-        @keyframes ui-glow {
-            from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
-            to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
-        }
-       
-        .ui-item { display: flex; align-items: center; gap: 8px; }
-       
-       
-        #gameOver, #startScreen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 20;
-            width: 90%;
-            max-width: 400px;
-            background: rgba(10, 20, 40, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid rgba(0, 255, 255, 0.7);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            animation: screen-pulse 1.5s infinite alternate;
-        }
-       
-        @keyframes screen-pulse {
-            from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
-            to { transform: translate(-50%, -50%) scale(1.02); opacity: 1; }
-        }
-       
-        #gameOver { display: none; }
-       
-        #startScreen h1 {
-            font-size: 36px;
-            text-shadow: 0 0 20px #00ffff;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            background: linear-gradient(to right, #00ffff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-       
-        #gameOver h1 {
-            font-size: 32px;
-            text-shadow: 0 0 20px #ff3232;
-            margin-bottom: 10px;
-            color: #ff3232;
-        }
-       
-        #startScreen p, #gameOver p {
-            font-size: 16px;
-            margin: 10px 0;
-            color: #a0e0ff;
-            line-height: 1.5;
-        }
-       
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-       
-        .btn {
-            background: transparent;
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            padding: 15px 40px;
-            font-size: 18px;
-            margin-top: 20px;
-            transition: all 0.3s;
-            font-family: 'Orbitron', monospace;
-            touch-action: manipulation;
-            border-radius: 30px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-            position: relative;
-            overflow: hidden;
-        }
-       
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
-            transition: left 0.5s;
-        }
-       
-        .btn:hover::before, .btn:active::before { left: 100%; }
-        .btn:active { background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 20px #00ffff; }
-       
-        #leftZone, #rightZone {
-            position: absolute;
-            bottom: 0;
-            width: 35%;
-            height: 150px;
-            z-index: 14;
-            opacity: 0;
-        }
-       
-        #leftZone { left: 0; }
-        #rightZone { right: 0; }
-       
-        .instructions { margin-top: 15px; font-size: 14px; color: #80c0ff; }
-       
-        .power-ups { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
-       
-        .power-up {
-            width: 33px;
-            height: 33px;
-            border-radius: 50%;
-            background: rgba(255, 215, 0, 0.3);
-            border: 1px solid gold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
-            animation: power-glow 1s infinite alternate;
-        }
-       
-        @keyframes power-glow { from { box-shadow: 0 0 5px gold; } to { box-shadow: 0 0 3.14px gold; } }
-       
-        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-       
-        .star { position: absolute; background-color: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
-       
-        @keyframes twinkle { from { opacity: 0.5; } to { opacity: 1; } }
-       
-        /* Стили для галактической карты */
-        /* Новый стиль: ЗАБЛОКИРОВАННАЯ МИССИЯ */
-        .mission-locked {
-            border: 3px dashed #5555ff;
-            color: #5555ff;
-            background: rgba(50, 50, 150, 0.4);
-            box-shadow: 0 0 20px rgba(85, 85, 255, 0.5);
-            animation: pulse-lock 2s infinite alternate;
-        }
-
-        /* Новый стиль: РАЗБЛОКИРОВАННАЯ МИССИЯ */
-        .mission-unlocked {
-            border: 3px solid #ff00ff;
-            color: #ff00ff;
-            background: rgba(150, 50, 150, 0.6);
-            box-shadow: 0 0 30px #ff00ff;
-            animation: pulse-unlock 1s infinite alternate;
-        }
-
-        @keyframes pulse-lock {
-            from { opacity: 0.7; }
-            to { opacity: 1.0; }
-        }
-
-        @keyframes pulse-unlock {
-            from { transform: scale(1.0); box-shadow: 0 0 30px #ff00ff; }
-            to { transform: scale(1.1); box-shadow: 0 0 40px #ff00ff; }
-        }
-        .sector {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            animation: pulse 3s infinite alternate;
-        }
-       
-        .sector.controlled {
-            background: radial-gradient(circle, #00ff88, #0088ff);
-            box-shadow: 0 0 30px #00ff88;
-        }
-       
-        .sector.enemy {
-            background: radial-gradient(circle, #ff4444, #ff0088);
-            box-shadow: 0 0 30px #ff4444;
-        }
-       
-        .sector.neutral {
-            background: radial-gradient(circle, #8888ff, #4444aa);
-            box-shadow: 0 0 20px #8888ff;
-        }
-       
-        .sector:hover {
-            transform: scale(1.2);
-            z-index: 10;
-        }
-       
-        .sirius-dust {
-            position: absolute;
-            top: calc(10% + var(--safe-top));
-            left: 15%;
-            font-size: 24px;
-            color: #00ffff;
-            text-shadow: 0 0 20px #00ffff;
-            animation: glow 2s infinite alternate;
-        }
-       
-        @keyframes glow {
-            from { opacity: 0.7; transform: scale(1); }
-            to { opacity: 1; transform: scale(1.05); }
-        }
-       
-        .resources-panel {
-            position: absolute;
-            top: var(--ui-top-offset);
-            right: 20px;
-            background: rgba(0, 20, 40, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #00ffff;
-        }
-       
-        .mission-alert {
-            position: absolute;
-            bottom: calc(80px + var(--safe-bottom));
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 100, 0, 0.9);
-            padding: 15px 30px;
-            border-radius: 25px;
-            animation: alert-pulse 1.5s infinite;
-        }
-       
-        @keyframes alert-pulse {
-            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 0, 0.7); }
-            50% { box-shadow: 0 0 40px rgba(255, 100, 0, 1); }
-        }
-       
-
-        /* УНИФИЦИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ */
-        #bottomPanel {
-            position: fixed;
-            bottom: var(--panel-bottom-offset);
-            left: 0;
-            width: 100%;
-            padding: 10px 20px;
-            box-sizing: border-box;
-            z-index: 15;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            pointer-events: auto;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
-        }
-
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(0, 255, 255, 0.2);
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            font-size: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            touch-action: none;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-            transition: all 0.1s;
-            backdrop-filter: blur(5px);
-            pointer-events: auto;
-        }
-
-        #fireBtn {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 50, 50, 0.2);
-            border-color: #ff3232;
-            color: #ff3232;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
-            touch-action: manipulation;
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        #mapBtn, #shooterBtn {
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 150, 255, 0.3);
-            border: 2px solid #00aaff;
-            color: #00aaff;
-            font-size: 20px;
-            box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
-            pointer-events: auto;
-        }
-
-        /* --- $XDUST Sector --- */
-        .sector.xdust {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #005577; /* базовый цвет */
-            border: 3px solid #00ffff;
-            box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
-            overflow: visible;
-            z-index: 12;
-        }
-
-        /* Плавное дыхание/сияние через ::before */
-        .sector.xdust::before {
-            content: "";
-            position: absolute;
-            width: 140%;
-            height: 140%;
-            top: -20%;
-            left: -20%;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,255,255,0.5) 0%, rgba(0,85,119,0) 70%);
-            animation: xdustBreath 2.7s infinite ease-in-out;
-            z-index: -1;
-        }
-
-        /* Пульсирующее кольцо вокруг сектора */
-        .sector.xdust::after {
-            content: "";
-            position: absolute;
-            width: 130%;
-            height: 130%;
-            top: -15%;
-            left: -15%;
-            border: 2.5px solid #00ffff;
-            border-radius: 50%;
-            opacity: 0.5;
-            pointer-events: none;
-            animation: xdustRing 2.7s infinite linear;
-            z-index: -1;
-        }
-
-        /* --- $XDUST-9999 Sector --- */
-        .sector.xdust9999 {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #990000; /* базовый цвет */
-            border: 3px solid #ff2222;
-            box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222;
-            overflow: visible;
-            z-index: 11;
-        }
-
-        .sector.xdust9999::before {
-            content: "";
-            position: absolute;
-            width: 140%;
-            height: 140%;
-            top: -20%;
-            left: -20%;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,34,34,0.6) 0%, rgba(153,0,0,0) 70%);
-            animation: xdust9999Breath 2.5s infinite ease-in-out;
-            z-index: -1;
-        }
-
-        /* --- Keyframes --- */
-        @keyframes xdustBreath {
-            0%, 100% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(1.3); opacity: 1; }
-        }
-
-        @keyframes xdustRing {
-            0% { transform: scale(1); opacity: 0.5; }
-            70% { transform: scale(1.3); opacity: 0.9; }
-            100% { transform: scale(1.7); opacity: 0; }
-        }
-
-        @keyframes xdust9999Breath {
-            0%, 100% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(1.3); opacity: 1; }
-        }
-
-        /* Звездный фон галактики */
-        #galaxyContainer::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 80%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        #galaxyContainer::after {
-            content: "";
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%;
-            height: 200%;
-            background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-            z-index: 0;
-            animation: starsDrift 60s linear infinite;
-            pointer-events: none;
-        }
-
-        @keyframes starsDrift {
-            from { background-position: 0 0; }
-            to { background-position: 1000px 1000px; }
-        }
-
-        /* Анимация "взрыва фрактального света" */
-        @keyframes burstFade {
-            from { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-            to { transform: translate(-50%, -50%) scale(2); opacity: 0; }
-        }
-        
-        /* Панель достижений с улучшенными отступами */
-        #achievementsPanel {
-            position: absolute;
-            top: var(--ui-top-offset);
-            left: 20px;
-            width: 200px;
-            background: rgba(0, 20, 40, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #ff00ff;
-            box-shadow: 0 0 15px #ff00ff;
-            max-height: calc(100vh - var(--ui-top-offset) - 130px);
-            overflow-y: auto;
-            z-index: 10;
-        }
-        
-        /* Кнопка магазина улучшений с улучшенными отступами */
-        #openUpgradeModalBtn {
-            position: fixed;
-            bottom: calc(110px + var(--safe-bottom));
-            left: 20px;
-            z-index: 30;
-            background: linear-gradient(90deg, #ff00ff, #00ffff);
-            color: #fff;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 30px;
-            box-shadow: 0 0 15px #ff00ff;
-            font-family: 'Orbitron', monospace;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            letter-spacing: 1px;
-            transition: box-shadow 0.2s;
-        }
-        
-        /* Модальное окно магазина с улучшенными отступами */
-        #upgradeShopModal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(10, 5, 40, 0.98);
-            z-index: 9999;
-            justify-content: center;
-            align-items: flex-start;
-            overflow-y: auto;
-            padding-top: var(--modal-top-offset);
-            padding-bottom: calc(6vw + var(--safe-bottom));
-        }
-        
-        /* Панель галактики с улучшенными отступами */
-        #bottomPanel-galaxy {
-            position: fixed;
-            bottom: var(--panel-bottom-offset);
-            right: 20px;
-            z-index: 100;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPACEDUST - Cosmic Strategy</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        /* Безопасный отступ сверху для всех UI-панелей и модальных окон */
+        :root {
+            --safe-top: env(safe-area-inset-top, 40px);
+            --ui-top-offset: calc(80px + var(--safe-top));
+        }
+        body {
+            background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #000000 100%);
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            touch-action: none;
+            color: #fff;
+        }
+        
+        /* Общие стили */
+        #gameContainer, #galaxyContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        #galaxyContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            /* background:
+                radial-gradient(circle at 20% 30%, rgba(120, 0, 200, 0.3) 0%, transparent 50%) no-repeat,
+                radial-gradient(circle at 80% 70%, rgba(0, 100, 255, 0.3) 0%, transparent 50%) no-repeat;
+            background-size: cover; */
+            overflow: hidden;
+            z-index: 5;
+        }
+        
+        canvas {
+            border: 0.314px solid rgba(0, 255, 255, 0.7);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2);
+            background: #000;
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+        }
+        
+        /* Стили для шутера */
+        #ui {
+            position: absolute;
+            top: var(--ui-top-offset);
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffff;
+            font-size: 16px;
+            text-shadow: 0 0 10px #00ffff;
+            z-index: 10;
+            pointer-events: none;
+            background: rgba(0, 20, 30, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            animation: ui-glow 2s infinite alternate;
+        }
+        
+        @keyframes ui-glow {
+            from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
+        }
+        
+        .ui-item { display: flex; align-items: center; gap: 8px; }
+        
+        
+        #gameOver, #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+            width: 90%;
+            max-width: 400px;
+            background: rgba(10, 20, 40, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid rgba(0, 255, 255, 0.7);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            animation: screen-pulse 1.5s infinite alternate;
+        }
+        
+        @keyframes screen-pulse {
+            from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+            to { transform: translate(-50%, -50%) scale(1.02); opacity: 1; }
+        }
+        
+        #gameOver { display: none; }
+        
+        #startScreen h1 {
+            font-size: 28px;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+            background: linear-gradient(to right, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        #gameOver h1 {
+            font-size: 28px;
+            text-shadow: 0 0 20px #ff3232;
+            margin-bottom: 10px;
+            color: #ff3232;
+        }
+        
+        #startScreen p, #gameOver p {
+            font-size: 16px;
+            margin: 10px 0;
+            color: #a0e0ff;
+            line-height: 1.5;
+        }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 15px 40px;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+            touch-action: manipulation;
+            border-radius: 30px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before, .btn:active::before { left: 100%; }
+        .btn:active { background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 20px #00ffff; }
+        
+        #leftZone, #rightZone {
+            position: absolute;
+            bottom: 0;
+            width: 35%;
+            height: 150px;
+            z-index: 14;
+            opacity: 0;
+        }
+        
+        #leftZone { left: 0; }
+        #rightZone { right: 0; }
+        
+        .instructions { margin-top: 15px; font-size: 14px; color: #80c0ff; }
+        
+        .power-ups { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+        
+        .power-up {
+            width: 33px;
+            height: 33px;
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.3);
+            border: 1px solid gold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            animation: power-glow 1s infinite alternate;
+        }
+        
+        @keyframes power-glow { from { box-shadow: 0 0 5px gold; } to { box-shadow: 0 0 3.14px gold; } }
+        
+        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        
+        .star { position: absolute; background-color: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
+        
+        @keyframes twinkle { from { opacity: 0.5; } to { opacity: 1; } }
+        
+        /* Стили для галактической карты */
+        /* Новый стиль: ЗАБЛОКИРОВАННАЯ МИССИЯ */
+        .mission-locked {
+            border: 3px dashed #5555ff;
+            color: #5555ff;
+            background: rgba(50, 50, 150, 0.4);
+            box-shadow: 0 0 20px rgba(85, 85, 255, 0.5);
+            animation: pulse-lock 2s infinite alternate;
+        }
+ 
+        /* Новый стиль: РАЗБЛОКИРОВАННАЯ МИССИЯ */
+        .mission-unlocked {
+            border: 3px solid #ff00ff;
+            color: #ff00ff;
+            background: rgba(150, 50, 150, 0.6);
+            box-shadow: 0 0 30px #ff00ff;
+            animation: pulse-unlock 1s infinite alternate;
+        }
+ 
+        @keyframes pulse-lock {
+            from { opacity: 0.7; }
+            to { opacity: 1.0; }
+        }
+ 
+        @keyframes pulse-unlock {
+            from { transform: scale(1.0); box-shadow: 0 0 30px #ff00ff; }
+            to { transform: scale(1.1); box-shadow: 0 0 40px #ff00ff; }
+        }
+        .sector {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 3s infinite alternate;
+        }
+        
+        .sector.controlled {
+            background: radial-gradient(circle, #00ff88, #0088ff);
+            box-shadow: 0 0 30px #00ff88;
+        }
+        
+        .sector.enemy {
+            background: radial-gradient(circle, #ff4444, #ff0088);
+            box-shadow: 0 0 30px #ff4444;
+        }
+        
+        .sector.neutral {
+            background: radial-gradient(circle, #8888ff, #4444aa);
+            box-shadow: 0 0 20px #8888ff;
+        }
+        
+        .sector:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+        
+        .sirius-dust {
+            position: absolute;
+            top: 20%;
+            left: 15%;
+            font-size: 24px;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { opacity: 0.7; transform: scale(1); }
+            to { opacity: 1; transform: scale(1.05); }
+        }
+        
+        .resources-panel {
+            position: absolute;
+            top: var(--ui-top-offset);
+            right: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 20px;
+            border-radius: 3px;
+            border: 1px solid #00ffff;
+        }
+        
+        .mission-alert {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 100, 0, 0.9);
+            padding: 15px 30px;
+            border-radius: 25px;
+            animation: alert-pulse 1.5s infinite;
+        }
+        
+        @keyframes alert-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 0, 0.7); }
+            50% { box-shadow: 0 0 40px rgba(255, 100, 0, 1); }
+        }
+        
+ 
+        /* УНИФИЦИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ */
+        #bottomPanel {
+            position: fixed;
+            bottom: env(safe-area-inset-bottom, 0);
+            left: 0;
+            width: 100%;
+            padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0)) 20px;
+            box-sizing: border-box;
+            z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: auto;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+        }
+ 
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            transition: all 0.1s;
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+ 
+        #fireBtn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 50, 50, 0.2);
+            border-color: #ff3232;
+            color: #ff3232;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+            touch-action: manipulation;
+            text-align: center;
+            line-height: 1.2;
+        }
+ 
+        #mapBtn, #shooterBtn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 150, 255, 0.3);
+            border: 2px solid #00aaff;
+            color: #00aaff;
+            font-size: 20px;
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
+            pointer-events: auto;
+        }
+ 
+        /* --- $XDUST Sector --- */
+        .sector.xdust {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #005577; /* базовый цвет */
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+            overflow: visible;
+            z-index: 12;
+        }
+ 
+        /* Плавное дыхание/сияние через ::before */
+        .sector.xdust::before {
+            content: "";
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            top: -20%;
+            left: -20%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,255,0.5) 0%, rgba(0,85,119,0) 70%);
+            animation: xdustBreath 2.7s infinite ease-in-out;
+            z-index: -1;
+        }
+ 
+        /* Пульсирующее кольцо вокруг сектора */
+        .sector.xdust::after {
+            content: "";
+            position: absolute;
+            width: 130%;
+            height: 130%;
+            top: -15%;
+            left: -15%;
+            border: 2.5px solid #00ffff;
+            border-radius: 50%;
+            opacity: 0.5;
+            pointer-events: none;
+            animation: xdustRing 2.7s infinite linear;
+            z-index: -1;
+        }
+ 
+        /* --- $XDUST-9999 Sector --- */
+        .sector.xdust9999 {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #990000; /* базовый цвет */
+            border: 3px solid #ff2222;
+            box-shadow: 0 0 40px 12px #ff2222, 0 0 80px 24px #ff2222;
+            overflow: visible;
+            z-index: 11;
+        }
+ 
+        .sector.xdust9999::before {
+            content: "";
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            top: -20%;
+            left: -20%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,34,34,0.6) 0%, rgba(153,0,0,0) 70%);
+            animation: xdust9999Breath 2.5s infinite ease-in-out;
+            z-index: -1;
+        }
+ 
+        /* --- Keyframes --- */
+        @keyframes xdustBreath {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+ 
+        @keyframes xdustRing {
+            0% { transform: scale(1); opacity: 0.5; }
+            70% { transform: scale(1.3); opacity: 0.9; }
+            100% { transform: scale(1.7); opacity: 0; }
+        }
+ 
+        @keyframes xdust9999Breath {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+ 
+        /* Звездный фон галактики */
+        #galaxyContainer::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+ 
+        #galaxyContainer::after {
+            content: "";
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+            z-index: 0;
+            animation: starsDrift 60s linear infinite;
+            pointer-events: none;
+        }
+ 
+        @keyframes starsDrift {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 1000px; }
+        }
+ 
+        /* Анимация "взрыва фрактального света" */
+        @keyframes burstFade {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            to { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+        }
+    </style>
 </head>
 <body>
-    <!-- Space Shooter -->
-    <div id="gameContainer">
-        <div class="stars" id="stars"></div>
-       
-        <div id="ui">
-            <div class="ui-item"><span>⚡</span><span id="score">0</span></div>
-            <div class="ui-item"><span>❤️</span><span id="lives">3</span></div>
-        </div>
-       
-        <div id="startScreen">
-            <h1>🚀 SPACEDUST</h1>
-            <p>Defend the Galaxy!</p>
-            <p>Dust your enemies and collect bonuses</p>
-            <div class="instructions">Use Buttons to Move and Fire</div>
-            <div class="power-ups"><div class="power-up">S</div><div class="power-up">P</div><div class="power-up">L</div></div>
-            <button class="btn" ontouchstart="startGame()" onclick="startGame()">START</button>
-            <div style="margin-top: 15px;">
-                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Galaxy Map</button>
-            </div>
-        </div>
-       
-        <div id="gameOver">
-            <h1>Mission Failed</h1>
-            <p>Score: <span id="finalScore">0</span></p>
-            <p>Sector captured by enemy!</p>
-            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">RESTART</button>
-            <div style="margin-top: 15px;">
-                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Galaxy Map</button>
-            </div>
-        </div>
-       
-        <canvas id="gameCanvas"></canvas>
-
-        <div id="bottomPanel" style="display: none;">
-            <button id="mapBtn" class="control-btn" onclick="switchToGalaxy()">🌌</button>
-           
-            <div style="display: flex; gap: 15px; pointer-events: auto;">
-                <div class="control-btn" id="leftBtn">◀</div>
-                <div class="control-btn" id="rightBtn">▶</div>
-            </div>
-           
-            <div id="fireBtn" class="control-btn">FIRE</div>
-        </div>
-
-        <div id="leftZone"></div>
-        <div id="rightZone"></div>
-    </div>
-
-    <!-- Galaxy Map -->
-    <div id="galaxyContainer">
-        <div class="sirius-dust">✨ XDUST FROM SIRIUS! ✨</div>
-       
-        <div class="resources-panel">
-            <h3>XDUST Resources</h3>
-            <div>⚡ Energy: <span id="energy">1500</span></div>
-            <div>🪐 Metals: <span id="metals">800</span></div>
-            <div>💎 Crystals: <span id="crystals">300</span></div>
-            <div>🚀 Score: <span id="galaxyScore">0</span></div>
-        </div>
-       
-        <div id="achievementsPanel">
-            <h3>🏆 Achievements</h3>
-            <div id="achievementsList"></div>
-        </div>
-
-        <div class="mission-alert">
-            🚨 Sirius delivers XDUST to boost your fleet!
-        </div>
-
-        <!-- Upgrade Shop Modal Button -->
-        <button id="openUpgradeModalBtn" onclick="openUpgradeShopModal()">🛠️ Upgrades</button>
-        
-        <!-- Upgrade Shop Modal (Full Screen) -->
-        <div id="upgradeShopModal">
-            <div style="
-                margin: 0 auto;
-                width: 96vw;
-                max-width: 400px;
-                background: rgba(5, 5, 50, 0.97);
-                padding: 28px 18px 18px 18px;
-                border-radius: 18px;
-                border: 2px solid #ff00ff;
-                box-shadow: 0 0 35px #ff00ff;
-                position: relative;
-                min-height: 270px;
-                color: #fff;
-            ">
-                <button onclick="closeUpgradeShopModal()" style="
-                    position: absolute;
-                    top: 12px; right: 12px;
-                    background: #ff00ff;
-                    color: #fff;
-                    border: none;
-                    border-radius: 50%;
-                    width: 34px; height: 34px;
-                    font-size: 20px;
-                    font-weight: bold;
-                    box-shadow: 0 0 10px #ff00ff;
-                    cursor: pointer;
-                    z-index: 2;
-                " aria-label="Close">✕</button>
-                <h3 style="color: #ff00ff; text-align: center; margin-bottom: 14px; text-shadow: 0 0 12px #ff00ff;">
-                    🛠️ XDUST Upgrades
-                </h3>
-                <div id="upgradesListModal"></div>
-                <p style="font-size: 13px; margin-top: 14px; color: #aaa; text-align: center;">
-                    ⚡ Energy: <span id="shopEnergyModal" class="resource-value">0</span>
-                </p>
-            </div>
-        </div>
-                   
-        <!-- Unified Bottom Button -->
-        <div id="bottomPanel-galaxy">
-            <button id="shooterBtn" class="control-btn" onclick="switchToShooter()">🎮</button>
-        </div>
-    </div>
+    <!-- Space Shooter -->
+    <div id="gameContainer">
+        <div class="stars" id="stars"></div>
+        
+        <div id="ui">
+            <div class="ui-item"><span>⚡</span><span id="score">0</span></div>
+            <div class="ui-item"><span>❤️</span><span id="lives">3</span></div>
+        </div>
+        
+        <div id="startScreen">
+            <h1>🚀 SPACEDUST</h1>
+            <p>Defend the Galaxy!</p>
+            <p>Dust your enemies and collect bonuses</p>
+            <div class="instructions">Use Buttons to Move and Fire</div>
+            <div class="power-ups"><div class="power-up">S</div><div class="power-up">P</div><div class="power-up">L</div></div>
+            <button class="btn" ontouchstart="startGame()" onclick="startGame()">START</button>
+            <div style="margin-top: 15px;">
+                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Galaxy Map</button>
+            </div>
+        </div>
+        
+        <div id="gameOver">
+            <h1>Mission Failed</h1>
+            <p>Score: <span id="finalScore">0</span></p>
+            <p>Sector captured by enemy!</p>
+            <button class="btn" ontouchstart="restartGame()" onclick="restartGame()">RESTART</button>
+            <div style="margin-top: 15px;">
+                <button class="mode-btn" onclick="switchToGalaxy()">🌌 Galaxy Map</button>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+ 
+        <div id="bottomPanel" style="display: none;">
+            <button id="mapBtn" class="control-btn" onclick="switchToGalaxy()">🌌</button>
+            
+            <div style="display: flex; gap: 15px; pointer-events: auto;">
+                <div class="control-btn" id="leftBtn">◀</div>
+                <div class="control-btn" id="rightBtn">▶</div>
+            </div>
+            
+            <div id="fireBtn" class="control-btn">FIRE</div>
+        </div>
+ 
+        <div id="leftZone"></div>
+        <div id="rightZone"></div>
+    </div>
+ 
+    <!-- Galaxy Map -->
+    <div id="galaxyContainer">
+        <div class="sirius-dust">✨ XDUST FROM SIRIUS! ✨</div>
+        
+        <div class="resources-panel">
+            <h3>XDUST Resources</h3>
+            <div>⚡ Energy: <span id="energy">1500</span></div>
+            <div>🪐 Metals: <span id="metals">800</span></div>
+            <div>💎 Crystals: <span id="crystals">300</span></div>
+            <div>🚀 Score: <span id="galaxyScore">0</span></div>
+        </div>
+        
+        <div id="achievementsPanel" style="
+            position: absolute;
+            top: var(--ui-top-offset);
+            left: 20px;
+            width: 200px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ff00ff;
+            box-shadow: 0 0 15px #ff00ff;
+            max-height: calc(100vh - var(--ui-top-offset) - 130px);
+            overflow-y: auto;
+            z-index: 10;
+        ">
+            <h3>🏆 Achievements</h3>
+            <div id="achievementsList"></div>
+        </div>
+ 
+        <div class="mission-alert">
+            🚨 Sirius delivers XDUST to boost your fleet!
+        </div>
+ 
+        <!-- Upgrade Shop Modal Button -->
+        <button id="openUpgradeModalBtn" style="
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            z-index: 30;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            color: #fff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 0 15px #ff00ff;
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: box-shadow 0.2s;
+        " onclick="openUpgradeShopModal()">🛠️ Upgrades</button>
+        <!-- Upgrade Shop Modal (Full Screen) -->
+        <div id="upgradeShopModal" style="
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 5, 40, 0.98);
+            z-index: 9999;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+            padding-top: var(--ui-top-offset);
+            padding-bottom: 6vw;
+        ">
+            <div style="
+                margin: 0 auto;
+                width: 96vw;
+                max-width: 400px;
+                background: rgba(5, 5, 50, 0.97);
+                padding: 28px 18px 18px 18px;
+                border-radius: 18px;
+                border: 2px solid #ff00ff;
+                box-shadow: 0 0 35px #ff00ff;
+                position: relative;
+                min-height: 270px;
+                color: #fff;
+            ">
+                <button onclick="closeUpgradeShopModal()" style="
+                    position: absolute;
+                    top: 12px; right: 12px;
+                    background: #ff00ff;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 34px; height: 34px;
+                    font-size: 20px;
+                    font-weight: bold;
+                    box-shadow: 0 0 10px #ff00ff;
+                    cursor: pointer;
+                    z-index: 2;
+                " aria-label="Close">✕</button>
+                <h3 style="color: #ff00ff; text-align: center; margin-bottom: 14px; text-shadow: 0 0 12px #ff00ff;">
+                    🛠️ XDUST Upgrades
+                </h3>
+                <div id="upgradesListModal"></div>
+                <p style="font-size: 13px; margin-top: 14px; color: #aaa; text-align: center;">
+                    ⚡ Energy: <span id="shopEnergyModal" class="resource-value">0</span>
+                </p>
+            </div>
+        </div>
+               
+        <!-- Unified Bottom Button -->
+        <div id="bottomPanel-galaxy" style="position: fixed; bottom: 0; right: 20px; z-index: 100; padding-bottom: 20px;">
+            <button id="shooterBtn" class="control-btn" onclick="switchToShooter()">🎮</button>
+        </div>
+    </div> update design don't delete update and видишь я какие отступы сверху делаю эт для телеграмм
 
     <script>
         // Базовые функции для демонстрации работы интерфейса
